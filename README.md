@@ -1,7 +1,7 @@
 Colocalisation pipeline
 =======================
 
-Work in progress. Preliminary scripts [here](https://github.com/edm1/coloc_interim).
+Work in progress. Preliminary scripts are [here](https://github.com/edm1/coloc_interim).
 
 ### Requirements
 - [conda](https://conda.io/docs/)
