@@ -8,6 +8,6 @@ python scripts/generate_overlap_table.py \
   --window 2 \
   --which_set 95 \
   --which_method all \
-  --outf output/overlap_table.parquet
+  --outf output/overlap_table.tsv.gz
 
 echo COMPLETE

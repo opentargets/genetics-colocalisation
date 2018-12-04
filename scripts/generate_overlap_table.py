@@ -3,7 +3,8 @@
 #
 # Ed Mountjoy
 #
-
+# Creates overlap table
+#
 
 import os
 import sys
@@ -130,15 +131,14 @@ def main():
     total_var_n = (res[['distinct_A', 'overlap_AB', 'distinct_B']]).sum(axis=1)
     res['proportion_overlap'] = res['overlap_AB'] / total_var_n
 
-    # Write to parquet
+    # Write to tsv
     os.makedirs(os.path.dirname(args.outf), exist_ok=True)
-    res.to_parquet(args.outf,
-                   engine='fastparquet',
-                   compression='snappy')
-    # Debug - write to tsv also
-    res.to_csv(args.outf.replace('parquet', 'tsv.gz'),
-               sep='\t', index=None, compression='gzip')
+    res.to_csv(args.outf, sep='\t', index=None, compression='gzip')
 
+    # Write to json
+    # res.to_json(args.outf, orient='split', compression='gzip')
+
+    return 0
 
 def parse_chrom_pos(key):
     ''' Gets chrom and pos from a variant ID
@@ -195,7 +195,7 @@ def parse_args():
                         choices=['all', 'conditional', 'distance'],
                         help='Only use credible sets derived using this method (default: all)')
     parser.add_argument('--outf',
-                        metavar="<parquet>",
+                        metavar="<tsv>",
                         type=str,
                         required=True)
     args = parser.parse_args()
