@@ -6,6 +6,7 @@ import sys
 import os
 import argparse
 import logging
+from pprint import pprint
 # import pandas as pd
 # import time
 # import subprocess as sp
@@ -15,6 +16,7 @@ def main():
     # Args
     global args
     args = parse_args()
+    pprint(vars(args))
 
     # # Make temp and output dirs
     # os.makedirs(args.outpref, exist_ok=True)
@@ -236,7 +238,7 @@ def parse_args():
 
     # Left input args
     p.add_argument('--sumstat_left',
-                   help=("Input: parquet file containing left summary stats"),
+                   help=("Input: left summary stats parquet file"),
                    metavar="<file>", type=str, required=True)
     p.add_argument('--study_left',
                    help=("Left study_id"),
@@ -250,13 +252,25 @@ def parse_args():
     p.add_argument('--trait_left',
                    help=("Left trait_id"),
                    metavar="<str>", type=str, required=True)
+    p.add_argument('--chrom_left',
+                   help=("Left chromomsome"),
+                   metavar="<str>", type=str, required=True)
+    p.add_argument('--pos_left',
+                   help=("Left position"),
+                   metavar="<int>", type=int, required=True)
+    p.add_argument('--ref_left',
+                   help=("Left ref allele"),
+                   metavar="<str>", type=str, required=False)
+    p.add_argument('--alt_left',
+                   help=("Left alt allele"),
+                   metavar="<str>", type=str, required=False)
     p.add_argument('--ld_left',
                    help=("Left LD plink reference"),
                    metavar="<str>", type=str, required=False)
 
     # Right input args
     p.add_argument('--sumstat_right',
-                   help=("Input: parquet file containing right summary stats"),
+                   help=("Input: right summary stats parquet file"),
                    metavar="<file>", type=str, required=True)
     p.add_argument('--study_right',
                    help=("Right study_id"),
@@ -270,17 +284,21 @@ def parse_args():
     p.add_argument('--trait_right',
                    help=("Right trait_id"),
                    metavar="<str>", type=str, required=True)
+    p.add_argument('--chrom_right',
+                   help=("Right chromomsome"),
+                   metavar="<str>", type=str, required=False)
+    p.add_argument('--pos_right',
+                   help=("Right position"),
+                   metavar="<int>", type=int, required=False)
+    p.add_argument('--ref_right',
+                   help=("Right ref allele"),
+                   metavar="<str>", type=str, required=False)
+    p.add_argument('--alt_right',
+                   help=("Right alt allele"),
+                   metavar="<str>", type=str, required=False)
     p.add_argument('--ld_right',
                    help=("Right LD plink reference"),
                    metavar="<str>", type=str, required=False)
-
-    # Variant parameters
-    p.add_argument('--chrom',
-                   help=("Chromosome to extract"),
-                   metavar="<str>", type=str, required=True)
-    p.add_argument('--pos',
-                   help=("Position of the index variant"),
-                   metavar="<int>", type=int, required=True)
 
     # Method parameteres
     p.add_argument('--method',
@@ -296,6 +314,23 @@ def parse_args():
                    help=("Plus/minus window (kb) to perform conditional "
                          "analysis on"),
                    metavar="<int>", type=int, required=True)
+
+    # Add output file
+    p.add_argument('--out',
+                   metavar="<file>",
+                   help=("Output: Coloc results"),
+                   type=str,
+                   required=True)
+    p.add_argument('--log',
+                   metavar="<file>",
+                   help=("Output: log file"),
+                   type=str,
+                   required=True)
+    p.add_argument('--tmpdir',
+                   metavar="<file>",
+                   help=("Output: temp dir"),
+                   type=str,
+                   required=True)
 
     args = p.parse_args()
 
