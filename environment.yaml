@@ -5,3 +5,5 @@ dependencies:
 - pandas
 - python-snappy
 - fastparquet
+- dask
+- numpy

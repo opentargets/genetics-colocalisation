@@ -12,7 +12,7 @@ def main():
 
     # Parse args
     inf = 'output/overlap_table.tsv.gz'
-    outf = 'output/manifest_file.tsv'
+    outf = 'configs/manifest_file.tsv'
     prop_threshold = 0.01
 
     # Load
