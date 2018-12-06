@@ -30,6 +30,7 @@ python scripts/coloc_wrapper.py \
   --window_cond "2000" \
   --min_maf "0.01" \
   --out "output/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/coloc_res.json" \
+  --plot "output/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/coloc_plot.png" \
   --log "logs/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/log_file.txt" \
   --tmpdir "tmp/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/"
 

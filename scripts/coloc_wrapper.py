@@ -13,8 +13,15 @@ import pandas as pd
 import dask.dataframe as dd
 import subprocess as sp
 import json
+from datetime import datetime
+from numpy import log10
+# Plotting libraries
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def main():
+
+    start_time = datetime.now()
 
     # Args
     global args
@@ -194,7 +201,8 @@ def main():
     )
     sumstat_int_left = sumstat_wind_left.loc[shared_vars, :]
     sumstat_int_right = sumstat_wind_right.loc[shared_vars, :]
-    logger.info('Left-right intersection contains {0} variants'.format(sumstat_int_left.shape[0]))
+    logger.info('Left-right intersection contains {0} variants'.format(
+        sumstat_int_left.shape[0]))
 
     # --------------------------------------------------------------------------
     # Perform coloc
@@ -211,21 +219,56 @@ def main():
         logger.info(' H4={:.3f} and H3={:.3f}'.format(
             res['PP.H4.abf'], res['PP.H3.abf']))
 
-    else:
+        # Write results
+        with open(args.out, 'w') as out_h:
+            json.dump(res, out_h)
 
+    else:
         logger.error('Cannot run coloc with no intersection')
+
+        # Touch empty results file
+        touch(args.out)
+
+    # --------------------------------------------------------------------------
+    # Make plot if requested
+    #
+
+    if args.plot and (sumstat_int_left.shape[0] > 0):
+
+        logger.info('Plotting')
+
+        run_make_coloc_plot(sumstat_int_left, sumstat_int_right, args.plot)
 
     # --------------------------------------------------------------------------
     # Output results
     #
 
-    # Write as json to output folder
-    if res:
-        with open(args.out, 'w') as out_h:
-            json.dump(res, out_h)
-    # If no results, then touch empty file
-    else:
-        touch(args.out)
+    # Log time taken
+    logger.info('Time taken: {0}'.format(datetime.now() - start_time))
+    logger.info('Finished!')
+
+    return 0
+
+def run_make_coloc_plot(left_ss, right_ss, outf):
+    ''' Uses seaborn to make a scatter plot of left vs right pvals
+    '''
+
+    # Take -log10 pvals
+    left_ss['log_pval'] = left_ss.pval.apply(log10) * -1
+    right_ss['log_pval'] = right_ss.pval.apply(log10) * -1
+
+    # Make longform
+    left_ss['dataset'] = 'left'
+    right_ss['dataset'] = 'right'
+    plot_df = pd.concat([
+        left_ss.loc[:, ['variant_id', 'pos', 'log_pval', 'dataset']],
+        right_ss.loc[:, ['variant_id', 'pos', 'log_pval', 'dataset']]])
+
+    # Create facet grid scatter plot
+    plt.ioff()
+    g = sns.FacetGrid(plot_df, row='dataset', sharey=False, aspect=2, hue='dataset')
+    g.map(plt.scatter, 'pos', 'log_pval', s=1)
+    plt.savefig(outf, bbox_inches='tight')
 
     return 0
 
@@ -405,6 +448,11 @@ def parse_args():
                    help=("Output: Coloc results"),
                    type=str,
                    required=True)
+    p.add_argument('--plot',
+                   metavar="<file>",
+                   help=("Output: Plot of colocalisation"),
+                   type=str,
+                   required=False)
     p.add_argument('--log',
                    metavar="<file>",
                    help=("Output: log file"),
@@ -430,21 +478,25 @@ def make_logger(log_file):
     '''
     # Basic setup
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S',
         stream=None)
+
     # Create formatter
     logFormatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
     rootLogger = logging.getLogger(__name__)
+
     # Add file logging
     fileHandler = logging.FileHandler(log_file, mode='w')
     fileHandler.setFormatter(logFormatter)
     rootLogger.addHandler(fileHandler)
+
     # Add stdout logging
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(logFormatter)
     rootLogger.addHandler(consoleHandler)
-     # Prevent logging from propagating to the root logger
+
+    # Prevent logging from propagating to the root logger
     rootLogger.propagate = 0
 
     return rootLogger

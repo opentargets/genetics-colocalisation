@@ -7,3 +7,5 @@ dependencies:
 - fastparquet
 - dask
 - numpy
+- matplotlib
+- seaborn
