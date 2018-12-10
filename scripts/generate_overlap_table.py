@@ -64,7 +64,7 @@ def main():
     # Find overlaps
     print('Finding overlaps...')
     overlap_data = []
-    header = ['key_A', 'key_B', 'distinct_A', 'overlap_AB', 'distinct_B']
+    header = ['key_left', 'key_right', 'distinct_left', 'overlap', 'distinct_right']
 
     # Partition by chromosome to speed things up
     tag_dict_chroms = {}
@@ -111,7 +111,7 @@ def main():
     res = pd.DataFrame(overlap_data, columns=header)
 
     # Split keys into separate columns
-    for suffix in ['A', 'B']:
+    for suffix in ['left', 'right']:
         ( res['study_id_{0}'.format(suffix)],
           res['cell_id_{0}'.format(suffix)],
           res['gene_id_{0}'.format(suffix)],
@@ -128,8 +128,8 @@ def main():
     res = res.loc[:, cols[3:] + cols[:3]]
 
     # Calculate proportion overlapping
-    total_var_n = (res[['distinct_A', 'overlap_AB', 'distinct_B']]).sum(axis=1)
-    res['proportion_overlap'] = res['overlap_AB'] / total_var_n
+    total_var_n = (res[['distinct_left', 'overlap', 'distinct_right']]).sum(axis=1)
+    res['proportion_overlap'] = res['overlap'] / total_var_n
 
     # Write to tsv
     os.makedirs(os.path.dirname(args.outf), exist_ok=True)

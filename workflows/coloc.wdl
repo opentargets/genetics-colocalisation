@@ -16,6 +16,7 @@ workflow coloc {
         pos_left
         ref_left
         alt_left
+        ld_left
         sumstat_right
         study_right
         cell_right
@@ -27,7 +28,6 @@ workflow coloc {
         alt_right
         method
         top_loci
-        ld_left
         ld_right
         out
         plot
@@ -36,6 +36,33 @@ workflow coloc {
     }
   }
 }
+
+
+0 sumstat_left
+1 study_left
+2 cell_left
+3 group_left
+4 trait_left
+5 chrom_left
+6 pos_left
+7 ref_left
+8 alt_left
+9 ld_left
+10 sumstat_right
+11 study_right
+12 cell_right
+13 group_right
+14 trait_right
+15 chrom_right
+16 pos_right
+17 ref_right
+18 alt_right
+19 ld_right
+20 method
+21 out
+22 plot
+23 log
+24 tmpdir
 
 # Task to run the coloc script
 task coloc_single {
