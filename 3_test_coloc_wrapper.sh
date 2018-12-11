@@ -22,6 +22,7 @@ python scripts/coloc_wrapper.py \
   --pos_right "17270751" \
   --ref_right "G" \
   --alt_right "A" \
+  --r_coloc_script "scripts/coloc.R" \
   --method "conditional" \
   --top_loci "input_examples/finemapping_output/top_loci.parquet" \
   --ld_left "../genetics-finemapping/input/ld/EUR.{chrom}.1000Gp3.20130502" \
@@ -30,7 +31,7 @@ python scripts/coloc_wrapper.py \
   --window_cond "2000" \
   --min_maf "0.01" \
   --out "output/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/coloc_res.json" \
-  --plot "output/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/coloc_plot.png" \
+  --plot "plots/NEALEUKB_50___UKB_50_1_17306029_C_A_GTEX7_UBERON_0000178_ENSG00000186715_UKB_50_1_17270751_G_A.png" \
   --log "logs/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/log_file.txt" \
   --tmpdir "tmp/study_left=NEALEUKB_50/cell_left=/group_left=/trait_left=UKB_50/variant_left=1_17306029_C_A/study_right=GTEX7/cell_right=UBERON_0000178/group_right=ENSG00000186715/trait_right=UKB_50/variant_right=1_17270751_G_A/"
 

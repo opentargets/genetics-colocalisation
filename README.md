@@ -23,3 +23,15 @@ todo
 ```
 todo
 ```
+
+### Useful commands
+
+```
+# Count finished
+find output -name "*.json" | wc -l
+
+# Parse time taken for each run
+find logs -name "log_file.txt" -exec grep "Time taken" {} \;
+
+
+```

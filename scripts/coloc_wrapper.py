@@ -214,7 +214,8 @@ def main():
 
         logger.info('Running colocalisation')
 
-        res = run_coloc(sumstat_int_left, sumstat_int_right, args.tmpdir)
+        res = run_coloc(args.r_coloc_script, sumstat_int_left,
+                        sumstat_int_right, args.tmpdir, logger)
 
         logger.info(' H4={:.3f} and H3={:.3f}'.format(
             res['PP.H4.abf'], res['PP.H3.abf']))
@@ -237,7 +238,11 @@ def main():
 
         logger.info('Plotting')
 
-        run_make_coloc_plot(sumstat_int_left, sumstat_int_right, args.plot)
+        run_make_coloc_plot(sumstat_int_left,
+                            sumstat_int_right,
+                            res['PP.H4.abf'],
+                            res['PP.H3.abf'],
+                            args.plot)
 
     # --------------------------------------------------------------------------
     # Output results
@@ -249,7 +254,7 @@ def main():
 
     return 0
 
-def run_make_coloc_plot(left_ss, right_ss, outf):
+def run_make_coloc_plot(left_ss, right_ss, h4, h3, outf):
     ''' Uses seaborn to make a scatter plot of left vs right pvals
     '''
 
@@ -268,11 +273,13 @@ def run_make_coloc_plot(left_ss, right_ss, outf):
     plt.ioff()
     g = sns.FacetGrid(plot_df, row='dataset', sharey=False, aspect=2, hue='dataset')
     g.map(plt.scatter, 'pos', 'log_pval', s=1)
+    g.fig.subplots_adjust(top=0.87)
+    g.fig.suptitle('H4={:.3f}\nH3={:.3f}'.format(h4, h3))
     plt.savefig(outf, bbox_inches='tight')
 
     return 0
 
-def run_coloc(left_ss, right_ss, tmp_dir):
+def run_coloc(script, left_ss, right_ss, tmp_dir, logger):
     ''' Runs R coloc script and read the results
     Args:
         left_ss (df)
@@ -291,7 +298,7 @@ def run_coloc(left_ss, right_ss, tmp_dir):
     out_pref = os.path.join(tmp_dir, 'coloc')
     cmd = [
         'Rscript',
-        'scripts/coloc.R',
+        script,
         left_path,
         right_path,
         out_pref
@@ -436,7 +443,9 @@ def parse_args():
                    help=("Which genome build to use (default: b37)"),
                    choices=['b37', 'b38'],
                    default='b37', type=str, required=False)
-
+    p.add_argument('--r_coloc_script',
+                   help=("R script that implements coloc"),
+                   type=str, required=True, metavar="<str>")
     # Top loci input
     p.add_argument('--top_loci',
                    help=("Input: Top loci table (required for conditional analysis)"),

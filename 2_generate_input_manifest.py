@@ -57,10 +57,11 @@ def main():
     # Add method
     manifest['method'] = 'conditional'
     # Add output path
-    manifest['out'] = manifest.apply(lambda row: 'output/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/coloc_res.json'.format(**row.fillna('').to_dict()), axis=1)
-    manifest['plot'] = manifest.apply(lambda row: 'output/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/coloc_plot.png'.format(**row.fillna('').to_dict()), axis=1)
-    manifest['log'] = manifest.apply(lambda row: 'log/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/log_file.txt'.format(**row.fillna('').to_dict()), axis=1)
-    manifest['tmpdir'] = manifest.apply(lambda row: 'tmp/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/log_file.txt'.format(**row.fillna('').to_dict()), axis=1)
+    manifest['out'] = manifest.apply(lambda row: os.path.abspath('output/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/coloc_res.json'.format(**row.fillna('').to_dict())), axis=1)
+    # manifest['plot'] = manifest.apply(lambda row: os.path.abspath('output/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/coloc_plot.png'.format(**row.fillna('').to_dict())), axis=1)
+    manifest['plot'] = manifest.apply(lambda row: os.path.abspath('plots/{study_left}_{cell_left}_{group_left}_{trait_left}_{chrom_left}_{pos_left}_{ref_left}_{alt_left}_{study_right}_{cell_right}_{group_right}_{trait_right}_{chrom_right}_{pos_right}_{ref_right}_{alt_right}.png'.format(**row.fillna('').to_dict())), axis=1)
+    manifest['log'] = manifest.apply(lambda row: os.path.abspath('logs/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/log_file.txt'.format(**row.fillna('').to_dict())), axis=1)
+    manifest['tmpdir'] = manifest.apply(lambda row: os.path.abspath('tmp/study_left={study_left}/cell_left={cell_left}/group_left={group_left}/trait_left={trait_left}/variant_left={chrom_left}_{pos_left}_{ref_left}_{alt_left}/study_right={study_right}/cell_right={cell_right}/group_right={group_right}/trait_right={trait_right}/variant_right={chrom_right}_{pos_right}_{ref_right}_{alt_right}/log_file.txt'.format(**row.fillna('').to_dict())), axis=1)
 
     # pprint(manifest.head(2).to_dict(orient='records'))
 
@@ -68,8 +69,9 @@ def main():
     # Write --------------------------------------------------------------------
     #
 
-    # Write temp
-    manifest.to_csv(outf, sep='\t', index=None, header=None)
+    # Write manifest
+    manifest.head(20).fillna('None').to_csv(outf, sep='\t', index=None, header=None)
+    # manifest.fillna('None').to_csv(outf, sep='\t', index=None, header=None)
 
     # Print columns
     for i, col in enumerate(manifest.columns):
