@@ -220,6 +220,13 @@ def main():
         logger.info(' H4={:.3f} and H3={:.3f}'.format(
             res['PP.H4.abf'], res['PP.H3.abf']))
 
+        # Add columns to result file
+        for suffix in ['_left', '_right']:
+            for prefix in ['sumstat', 'study', 'cell', 'group', 'trait',
+                           'chrom', 'pos', 'ref', 'alt']:
+                key = prefix + suffix
+                res[key] = args.__dict__[key]
+
         # Write results
         with open(args.out, 'w') as out_h:
             json.dump(res, out_h)
