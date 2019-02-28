@@ -5,167 +5,136 @@
 #
 # Creates overlap table
 #
+'''
+# Set SPARK_HOME and PYTHONPATH to use 2.4.0
+export PYSPARK_SUBMIT_ARGS="--driver-memory 8g pyspark-shell"
+export SPARK_HOME=/Users/em21/software/spark-2.4.0-bin-hadoop2.7
+export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$PYTHONPATH
+'''
 
-import os
-import sys
-from pprint import pprint
+import pyspark.sql
+from pyspark.sql.types import *
+from pyspark.sql.functions import *
 import argparse
-import pandas as pd
 
 def main():
 
     # Parse args
     args = parse_args()
 
+    # Make spark session
+    spark = pyspark.sql.SparkSession.builder.getOrCreate()
+    print('Spark version: ', spark.version)
+
     #
     # Load and filter data
     #
 
-    # Load credible set data
-    cred_set = pd.read_parquet(args.in_credset,
-                               engine='fastparquet')#.head(1000)
+    # Load
+    df = (
+        spark.read.json(args.in_credset)
+             .select('type', 'study_id', 'phenotype_id', 'biofeature', 'lead_chrom',
+                     'lead_pos', 'lead_ref', 'lead_alt', 'tag_chrom', 'tag_pos',
+                     'tag_ref', 'tag_alt', 'is95_credset', 'is99_credset',
+                     'multisignal_method')
+    )
 
-    # Filter on credible set type
-    to_keep = cred_set['is{0}_credset'.format(args.which_set)]
-    cred_set = cred_set.loc[to_keep, :]
+    # Filter on credset
+    df = df.filter(col('is{}_credset'.format(args.which_set)))
 
-    # Filter on method type
+    # Filter of method
     if args.which_method != 'all':
-        to_keep = cred_set['multisignal_method'] == args.which_method
-        cred_set = cred_set.loc[to_keep, :]
+        df = df.filter(col('multisignal_method') == args.which_method)
+
+    # Drop filtering columns
+    df = df.drop('is95_credset', 'is99_credset', 'multisignal_method')
+
+    # Study identifier columns
+    study_cols = ['type', 'study_id', 'phenotype_id', 'biofeature',
+                  'lead_chrom', 'lead_pos', 'lead_ref', 'lead_alt']
+
+    # Create a single key column as an identifier for the study
+    df = df.withColumn('key', concat_ws('_', *study_cols))
+    study_cols = ['key'] + study_cols
 
     #
-    # Convert data into dictionary of {(study key, lead var): set([tag vars])}
+    # Create left and right datasets
     #
-
-    # Extract index variant info: chrom, pos, ref, alt
-    ( cred_set['chrom_index'],
-      cred_set['pos_index'],
-      cred_set['ref_index'],
-      cred_set['alt_index'] ) = cred_set.variant_id_index.str.split('_').str
-
-    cred_set['pos_index'] = cred_set['pos_index'].astype(int)
-
-    # Create a key column
-    key_cols = ['study_id', 'cell_id', 'gene_id', 'group_id', 'trait_id',
-                'chrom_index', 'pos_index', 'ref_index', 'alt_index']
-    cred_set['key'] = cred_set[key_cols].values.tolist()
-    cred_set['key'] = cred_set['key'].apply(tuple)
-
-    # Group by key column and aggregate tag variants into a set
-    tag_df = cred_set.groupby('key').variant_id_tag.agg(set).reset_index()
-    tag_dict = pd.Series(tag_df.variant_id_tag.values,
-                         index=tag_df.key).to_dict()
+    
+    left = df
+    for colname in study_cols:
+        left = left.withColumnRenamed(colname, 'left_' + colname)
+    right = df
+    for colname in study_cols:
+        right = right.withColumnRenamed(colname, 'right_' + colname)
 
     #
-    # Find overlaps ------------------------------------------------------------
-    #
-
     # Find overlaps
-    print('Finding overlaps...')
-    overlap_data = []
-    header = ['key_left', 'key_right', 'distinct_left', 'overlap', 'distinct_right']
-
-    # Partition by chromosome to speed things up
-    tag_dict_chroms = {}
-    for key in tag_dict:
-        chrom, _ = parse_chrom_pos(key)
-        try:
-            tag_dict_chroms[chrom][key] = tag_dict[key]
-        except KeyError:
-            tag_dict_chroms[chrom] = {}
-            tag_dict_chroms[chrom][key] = tag_dict[key]
-
-    # Run each chromosome separately
-    window = args.window * 1e6
-    c = 0
-    for chrom in tag_dict_chroms:
-        tag_dict_chrom = tag_dict_chroms[chrom]
-        for key_A in tag_dict_chrom.keys():
-            if c % 1000 == 0:
-                print(' processing {0} of {1}...'.format(c, len(tag_dict)))
-            c += 1
-            for key_B in tag_dict_chrom.keys():
-                if key_A != key_B and varids_overlap_window(key_A, key_B, window):
-                    # Find overlap in sets
-                    distinct_A = tag_dict_chrom[key_A].difference(
-                        tag_dict_chrom[key_B])
-                    overlap_AB = tag_dict_chrom[key_A].intersection(
-                        tag_dict_chrom[key_B])
-                    distinct_B = tag_dict_chrom[key_B].difference(
-                        tag_dict_chrom[key_A])
-                    # Save result
-                    if len(overlap_AB) > 0:
-                        out_row = [key_A,
-                                   key_B,
-                                   len(distinct_A),
-                                   len(overlap_AB),
-                                   len(distinct_B)]
-                        overlap_data.append(out_row)
-
-    #
-    # Save output --------------------------------------------------------------
     #
 
-    # Convert to dataframe
-    res = pd.DataFrame(overlap_data, columns=header)
+    # Merge
+    cols_to_merge = ['tag_chrom', 'tag_pos', 'tag_ref', 'tag_alt']
+    overlap = left.join(right, on=cols_to_merge, how='inner')
 
-    # Split keys into separate columns
-    for suffix in ['left', 'right']:
-        ( res['study_id_{0}'.format(suffix)],
-          res['cell_id_{0}'.format(suffix)],
-          res['gene_id_{0}'.format(suffix)],
-          res['group_id_{0}'.format(suffix)],
-          res['trait_id_{0}'.format(suffix)],
-          res['chrom_index_{0}'.format(suffix)],
-          res['pos_index_{0}'.format(suffix)],
-          res['ref_index_{0}'.format(suffix)],
-          res['alt_index_{0}'.format(suffix)] ) = res['key_{0}'.format(suffix)].str
-        res = res.drop(columns='key_{0}'.format(suffix))
+    # Remove non-needed overlaps
+    overlap = (
+        # Remove overlaps that belong to the same study
+        overlap.filter(col('left_study_id') != col('right_study_id'))
+        # Make sure at least one study is of type 'gwas' (no mol trait vs mol trait)
+        .filter((col('left_type') == 'gwas') | (col('right_type') == 'gwas'))
+        # Keep only the upper triangle from the square matrix
+        .filter(col('left_key') > col('right_key'))
+    )
 
-    # Put counts at end
-    cols = list(res.columns.values)
-    res = res.loc[:, cols[3:] + cols[:3]]
+    # Count overlaps
+    group_by_cols = [prefix + colname for prefix in ['left_', 'right_']
+                     for colname in study_cols]
+    overlap_counts = (
+        overlap.groupby(group_by_cols)
+               .agg(count('tag_chrom').alias('num_overlapping'))
+    ).cache()
 
-    # Calculate proportion overlapping
-    total_var_n = (res[['distinct_left', 'overlap', 'distinct_right']]).sum(axis=1)
-    res['proportion_overlap'] = res['overlap'] / total_var_n
+    #
+    # Count total number of tags and merge this to the overlap counts for both left and right keys
+    #
 
-    # Write to tsv
-    os.makedirs(os.path.dirname(args.outf), exist_ok=True)
-    res.to_csv(args.outf, sep='\t', index=None, compression='gzip')
+    # Calculate the total number of tags per key
+    tag_counts = (
+        df.groupby('key')
+          .agg(count('tag_chrom').alias('num_tags'))
+    ).cache()
 
-    # Write to json
-    # res.to_json(args.outf, orient='split', compression='gzip')
+    # Merge to left key
+    overlap_counts = overlap_counts.join(
+        tag_counts.alias('left_tag_counts').withColumnRenamed('num_tags', 'left_num_tags'),
+        overlap_counts.left_key == col('left_tag_counts.key')
+    ).drop('key').cache()
+
+    # Merge to right key
+    overlap_counts = overlap_counts.join(
+        tag_counts.alias('right_tag_counts').withColumnRenamed('num_tags', 'right_num_tags'),
+        overlap_counts.right_key == col('right_tag_counts.key')
+    ).drop('key').cache()
+
+    # Calc maximum proportion overlapping from either left or right
+    overlap_counts = (
+        overlap_counts
+        .withColumn('min_num_tags', when(col('left_num_tags') < col('right_num_tags'), col('left_num_tags')).otherwise(col('right_num_tags')))
+        .withColumn('proportion_overlap', col('num_overlapping') / col('min_num_tags'))
+        # .drop('min_num_tags')
+    )
+
+    # Write
+    (
+        overlap_counts.coalesce(1)
+        .drop('left_key', 'right_key')
+        .write.json(args.outf,
+                    mode='overwrite')
+    )
 
     return 0
 
-def parse_chrom_pos(key):
-    ''' Gets chrom and pos from a variant ID
-    Returns:
-        (chrom, pos)
-    '''
-    return key[5], key[6]
-
-def varids_overlap_window(key_A, key_B, window):
-    ''' Extracts chrom:pos info from two variant IDs and checks if they are
-        within a certain window of each other
-    Args:
-        var_A (chr_pos_a1_a2)
-        var_B (chr_pos_a1_a2)
-        window (int): bp window to consider an overlap
-    '''
-    # Get positional info
-    chrom_A, pos_A = parse_chrom_pos(key_A)
-    chrom_B, pos_B = parse_chrom_pos(key_B)
-    # Check chroms are the same
-    if not chrom_A == chrom_B:
-        return False
-    # Check window
-    if abs(int(pos_A) - int(pos_B)) > window:
-        return False
-    else:
-        return True
+    
 
 def parse_args():
     """ Load command line args """
@@ -174,12 +143,6 @@ def parse_args():
                         metavar="<parquet>",
                         type=str,
                         required=True)
-    parser.add_argument('--window',
-                        metavar="<int>",
-                        type=int,
-                        required=True,
-                        default=5,
-                        help='Window (in Mb) around lead variant to look for overlapping signals (default: 5)')
     parser.add_argument('--which_set',
                         metavar="<95|99>",
                         type=str,

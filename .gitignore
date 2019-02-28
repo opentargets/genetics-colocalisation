@@ -2,6 +2,8 @@
 output/
 logs/
 tmp/
+plots/
+cromwell-*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

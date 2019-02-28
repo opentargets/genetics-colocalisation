@@ -49,16 +49,14 @@ def main():
     logger.info('Loading left sumstats for {0}kb conditional window'.format(
         args.window_cond))
     sumstat_left = coloc_utils.load_sumstats(
-        in_pq=args.sumstat_left,
-        study_id=args.study_left,
-        cell_id=args.cell_left,
-        group_id=args.group_left,
-        trait_id=args.trait_left,
-        chrom=args.chrom_left,
-        start=args.pos_left - args.window_cond * 1000,
-        end=args.pos_left + args.window_cond * 1000,
+        in_pq=args.left_sumstat,
+        study_id=args.left_study,
+        phenotype_id=args.left_phenotype,
+        biofeature=args.left_biofeature,
+        chrom=args.left_chrom,
+        start=args.left_pos - args.window_cond * 1000,
+        end=args.left_pos + args.window_cond * 1000,
         min_maf=args.min_maf,
-        build=args.build,
         logger=logger)
     logger.info('Loaded {0} left variants'.format(sumstat_left.shape[0]))
 
@@ -66,16 +64,14 @@ def main():
     logger.info('Loading right sumstats for {0}kb conditional window'.format(
         args.window_cond))
     sumstat_right = coloc_utils.load_sumstats(
-        in_pq=args.sumstat_right,
-        study_id=args.study_right,
-        cell_id=args.cell_right,
-        group_id=args.group_right,
-        trait_id=args.trait_right,
-        chrom=args.chrom_right,
-        start=args.pos_right - args.window_cond * 1000,
-        end=args.pos_right + args.window_cond * 1000,
+        in_pq=args.right_sumstat,
+        study_id=args.right_study,
+        phenotype_id=args.right_phenotype,
+        biofeature=args.right_biofeature,
+        chrom=args.right_chrom,
+        start=args.right_pos - args.window_cond * 1000,
+        end=args.right_pos + args.window_cond * 1000,
         min_maf=args.min_maf,
-        build=args.build,
         logger=logger)
     logger.info('Loaded {0} right variants'.format(sumstat_right.shape[0]))
 
@@ -87,31 +83,32 @@ def main():
 
         logger.info('Starting conditional analysis')
 
-        # Load top loci
+        # Load top loci json
         logger.info(' Loading top loci table')
-        top_loci = dd.read_parquet(args.top_loci,
-                                   engine='fastparquet').compute()
+        top_loci = pd.read_json(
+            args.top_loci,
+            orient='records',
+            lines=True
+        )
 
         # Make left and right variant IDs
-        varid_left = '_'.join([str(x) for x in [
-            args.chrom_left, args.pos_left, args.ref_left, args.alt_left]])
-        varid_right = '_'.join([str(x) for x in [
-            args.chrom_right, args.pos_right, args.ref_right, args.alt_right]])
+        varid_left = ':'.join([str(x) for x in [
+            args.left_chrom, args.left_pos, args.left_ref, args.left_alt]])
+        varid_right = ':'.join([str(x) for x in [
+            args.right_chrom, args.right_pos, args.right_ref, args.right_alt]])
 
         # Extract left and right top loci variants
         query_left = make_pandas_top_loci_query(
-            study_id=args.study_left,
-            cell_id=args.cell_left,
-            group_id=args.group_left,
-            trait_id=args.trait_left,
-            chrom=args.chrom_left)
+            study_id=args.left_study,
+            phenotype_id=args.left_phenotype,
+            biofeature=args.left_biofeature,
+            chrom=args.left_chrom)
         top_loci_left = top_loci.query(query_left)
         query_right = make_pandas_top_loci_query(
-            study_id=args.study_right,
-            cell_id=args.cell_right,
-            group_id=args.group_right,
-            trait_id=args.trait_right,
-            chrom=args.chrom_right)
+            study_id=args.right_study,
+            phenotype_id=args.right_phenotype,
+            biofeature=args.right_biofeature,
+            chrom=args.right_chrom)
         top_loci_right = top_loci.query(query_right)
 
         # Create list of variants to condition on
@@ -126,15 +123,16 @@ def main():
                 sumstat_left.shape[0], len(cond_list_left)))
             sumstat_cond_left = coloc_gcta.perfrom_conditional_adjustment(
                 sumstat_left,
-                args.ld_left,
+                args.left_ld,
                 args.tmpdir,
                 varid_left,
-                args.chrom_left,
+                args.left_chrom,
                 cond_list_left,
                 logger=logger)
             logger.info(' Left, finished conditioning, {} variants remain'.format(
                 sumstat_cond_left.shape[0]))
             # Copy the conditional stats into the original positions
+            print(sumstat_cond_left.loc[sumstat_cond_left['pos'] == 39304989, :])
             sumstat_cond_left['beta'] = sumstat_cond_left['beta_cond']
             sumstat_cond_left['se'] = sumstat_cond_left['se_cond']
             sumstat_cond_left['pval'] = sumstat_cond_left['pval_cond']
@@ -149,10 +147,10 @@ def main():
                 sumstat_right.shape[0], len(cond_list_right)))
             sumstat_cond_right = coloc_gcta.perfrom_conditional_adjustment(
                 sumstat_right,
-                args.ld_right,
+                args.right_ld,
                 args.tmpdir,
                 varid_right,
-                args.chrom_right,
+                args.right_chrom,
                 cond_list_right,
                 logger=logger)
             logger.info(' Right, finished conditioning, {} variants remain'.format(
@@ -175,15 +173,15 @@ def main():
 
     sumstat_wind_left = coloc_utils.extract_window(
         sumstat_left,
-        args.chrom_left,
-        args.pos_left,
+        args.left_chrom,
+        args.left_pos,
         args.window_coloc)
     logger.info(' Left, {} variants remain'.format(sumstat_wind_left.shape[0]))
 
     sumstat_wind_right = coloc_utils.extract_window(
         sumstat_right,
-        args.chrom_left,
-        args.pos_left,
+        args.left_chrom,
+        args.left_pos,
         args.window_coloc)
     logger.info(' Right, {} variants remain'.format(sumstat_wind_right.shape[0]))
 
@@ -221,8 +219,8 @@ def main():
             res['PP.H4.abf'], res['PP.H3.abf']))
 
         # Add columns to result file
-        for suffix in ['_left', '_right']:
-            for prefix in ['sumstat', 'study', 'cell', 'group', 'trait',
+        for prefix in ['left_', 'right_']:
+            for suffix in ['type', 'sumstat', 'study', 'phenotype', 'biofeature',
                            'chrom', 'pos', 'ref', 'alt']:
                 key = prefix + suffix
                 res[key] = args.__dict__[key]
@@ -244,7 +242,7 @@ def main():
     if args.plot and (sumstat_int_left.shape[0] > 0):
 
         logger.info('Plotting')
-
+        os.makedirs(os.path.split(args.plot)[0], exist_ok=True)
         run_make_coloc_plot(sumstat_int_left,
                             sumstat_int_right,
                             res['PP.H4.abf'],
@@ -312,9 +310,9 @@ def run_coloc(script, left_ss, right_ss, tmp_dir, logger):
     ]
 
     # Run command
+    # print(' '.join(cmd))
     fnull = open(os.devnull, 'w')
     cp = sp.run(' '.join(cmd), shell=True, stdout=fnull, stderr=sp.STDOUT)
-    # cp = sp.run(' '.join(cmd), shell=True)
 
     # Read results
     res_path = out_pref + '.pp.tsv'
@@ -326,17 +324,15 @@ def run_coloc(script, left_ss, right_ss, tmp_dir, logger):
 
     return res_dict
 
-def make_pandas_top_loci_query(study_id, cell_id=None, group_id=None,
-                               trait_id=None, chrom=None):
+def make_pandas_top_loci_query(study_id, phenotype_id=None,
+                               biofeature=None, chrom=None):
     ''' Creates query to extract top loci for specific study
     '''
     queries = ['study_id == "{}"'.format(study_id)]
-    if cell_id:
-        queries.append('cell_id == "{}"'.format(cell_id))
-    if group_id:
-        queries.append('group_id == "{}"'.format(group_id))
-    if trait_id:
-        queries.append('trait_id == "{}"'.format(trait_id))
+    if phenotype_id:
+        queries.append('phenotype_id == "{}"'.format(phenotype_id))
+    if biofeature:
+        queries.append('biofeature == "{}"'.format(biofeature))
     if chrom:
         queries.append('chrom == "{}"'.format(chrom))
     return ' & '.join(queries)
@@ -364,66 +360,66 @@ def parse_args():
     p = argparse.ArgumentParser()
 
     # Left input args
-    p.add_argument('--sumstat_left',
+    p.add_argument('--left_sumstat',
                    help=("Input: left summary stats parquet file"),
                    metavar="<file>", type=str, required=True)
-    p.add_argument('--study_left',
+    p.add_argument('--left_type',
+                   help=("Left type"),
+                   metavar="<str>", type=str, required=True)
+    p.add_argument('--left_study',
                    help=("Left study_id"),
                    metavar="<str>", type=str, required=True)
-    p.add_argument('--cell_left',
-                   help=("Left cell_id"),
+    p.add_argument('--left_phenotype',
+                   help=("Left phenotype_id"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--group_left',
-                   help=("Left group_id"),
+    p.add_argument('--left_biofeature',
+                   help=("Left biofeature"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--trait_left',
-                   help=("Left trait_id"),
-                   metavar="<str>", type=str, required=True)
-    p.add_argument('--chrom_left',
+    p.add_argument('--left_chrom',
                    help=("Left chromomsome"),
                    metavar="<str>", type=str, required=True)
-    p.add_argument('--pos_left',
+    p.add_argument('--left_pos',
                    help=("Left position"),
                    metavar="<int>", type=int, required=True)
-    p.add_argument('--ref_left',
+    p.add_argument('--left_ref',
                    help=("Left ref allele"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--alt_left',
+    p.add_argument('--left_alt',
                    help=("Left alt allele"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--ld_left',
+    p.add_argument('--left_ld',
                    help=("Left LD plink reference"),
                    metavar="<str>", type=str, required=False)
-
+    
     # Right input args
-    p.add_argument('--sumstat_right',
-                   help=("Input: right summary stats parquet file"),
+    p.add_argument('--right_sumstat',
+                   help=("Input: Right summary stats parquet file"),
                    metavar="<file>", type=str, required=True)
-    p.add_argument('--study_right',
+    p.add_argument('--right_type',
+                   help=("Right type"),
+                   metavar="<str>", type=str, required=True)
+    p.add_argument('--right_study',
                    help=("Right study_id"),
                    metavar="<str>", type=str, required=True)
-    p.add_argument('--cell_right',
-                   help=("Right cell_id"),
+    p.add_argument('--right_phenotype',
+                   help=("Right phenotype_id"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--group_right',
-                   help=("Right group_id"),
+    p.add_argument('--right_biofeature',
+                   help=("Right biofeature"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--trait_right',
-                   help=("Right trait_id"),
-                   metavar="<str>", type=str, required=True)
-    p.add_argument('--chrom_right',
+    p.add_argument('--right_chrom',
                    help=("Right chromomsome"),
-                   metavar="<str>", type=str, required=False)
-    p.add_argument('--pos_right',
+                   metavar="<str>", type=str, required=True)
+    p.add_argument('--right_pos',
                    help=("Right position"),
-                   metavar="<int>", type=int, required=False)
-    p.add_argument('--ref_right',
+                   metavar="<int>", type=int, required=True)
+    p.add_argument('--right_ref',
                    help=("Right ref allele"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--alt_right',
+    p.add_argument('--right_alt',
                    help=("Right alt allele"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--ld_right',
+    p.add_argument('--right_ld',
                    help=("Right LD plink reference"),
                    metavar="<str>", type=str, required=False)
 
@@ -446,10 +442,6 @@ def parse_args():
     p.add_argument('--min_maf',
                    help=("Minimum minor allele frequency to be included"),
                    metavar="<float>", type=float, required=False)
-    p.add_argument('--build',
-                   help=("Which genome build to use (default: b37)"),
-                   choices=['b37', 'b38'],
-                   default='b37', type=str, required=False)
     p.add_argument('--r_coloc_script',
                    help=("R script that implements coloc"),
                    type=str, required=True, metavar="<str>")

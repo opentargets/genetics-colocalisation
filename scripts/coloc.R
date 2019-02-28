@@ -23,8 +23,13 @@ left_ss$side = 'left'
 right_ss = read.table(in_right_ss, sep="\t", header=T)
 right_ss$side = 'right'
 
+# EAF to MAF function
+eaf_to_maf = function(eaf) {
+  min(eaf, 1-eaf)
+}
+
 # Make coloc dataset (left)
-left_n = left_ss[1, 'n_samples']
+left_n = left_ss[1, 'n_total']
 left_ncases = left_ss[1, 'n_cases']
 left_ncases = min(left_ncases, (left_n - left_ncases))
 left_prop = left_ncases / left_n
@@ -32,26 +37,36 @@ left_type = ifelse(as.character(left_ss[1, 'is_cc']) == 'True', 'cc', 'quant')
 left_data = list(
                  pvalues=left_ss$pval,
                  N=left_n,
-                 MAF=left_ss$maf,
-                 #beta=left_ss$beta,
-                 #varbeta=((left_ss$se)^2)*left_n,
+                 MAF=sapply(left_ss$eaf, eaf_to_maf),
                  type=left_type,
                  s=left_prop
                )
 
-# Make coloc dataset (right). Use left_ss's maf if right has no maf
-right_n = right_ss[1, 'n_samples'] #* 10
+# Make coloc dataset (right)
+right_n = right_ss[1, 'n_total']
+right_ncases = right_ss[1, 'n_cases']
+right_ncases = min(right_ncases, (right_n - right_ncases))
+right_prop = right_ncases / right_n
 right_type = ifelse(as.character(right_ss[1, 'is_cc']) == 'True', 'cc', 'quant')
-# right_maf = ifelse(!is.na(right_ss$maf), right_ss$maf, left_ss$maf)
-print(right_type)
 right_data = list(
                  pvalues=right_ss$pval,
                  N=right_n,
-                 MAF=right_ss$maf,
-                 #beta=right_ss$beta,
-                 #varbeta=((right_ss$se)^2)*right_n,
-                 type=right_type
-                )
+                 MAF=sapply(right_ss$eaf, eaf_to_maf),
+                 type=right_type,
+                 s=right_prop
+               )
+
+
+# # Make coloc dataset (right). Use left_ss's maf if right has no maf
+# right_n = right_ss[1, 'n_samples'] #* 10
+# right_type = ifelse(as.character(right_ss[1, 'is_cc']) == 'True', 'cc', 'quant')
+# print(right_type)
+# right_data = list(
+#                  pvalues=right_ss$pval,
+#                  N=right_n,
+#                  MAF=min(right_ss$maf, 1-right_ss$maf),
+#                  type=right_type
+#                 )
 
 # Run coloc
 coloc_res = coloc.abf(left_data, right_data,

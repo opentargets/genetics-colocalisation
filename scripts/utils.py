@@ -8,19 +8,14 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
+import os
 
-def load_sumstats(in_pq, study_id, cell_id=None, group_id=None, trait_id=None,
-                  chrom=None, start=None, end=None, excl_mhc=None, min_maf=None,
-                  build='b37', logger=None):
+def load_sumstats(in_pq, study_id, phenotype_id=None, biofeature=None,
+                  chrom=None, start=None, end=None, min_maf=None, logger=None):
     ''' Loads summary statistics from Open Targets parquet format:
         - Loads only required rows
         - Converts to pandas
-        - Extracts N samples, N cases, EAF
-        - TODO only extract required columns
-        - TODO extract eaf
-    Args:
-        excl_mhc (b37|b38|None): whether to exclude the MHC region
-        build (b37|b38): which build to use
+        - Only extract required columns
     '''
 
     #
@@ -29,64 +24,46 @@ def load_sumstats(in_pq, study_id, cell_id=None, group_id=None, trait_id=None,
 
     # Create row-group filters
     row_grp_filters = [('study_id', '==', study_id)]
-    if cell_id:
-        row_grp_filters.append(('cell_id', '==', cell_id))
-    if group_id:
-        row_grp_filters.append(('group_id', '==', group_id))
-    if trait_id:
-        row_grp_filters.append(('trait_id', '==', trait_id))
+    if phenotype_id:
+        row_grp_filters.append(('phenotype_id', '==', phenotype_id))
     if chrom:
         row_grp_filters.append(('chrom', '==', str(chrom)))
     if start:
-        row_grp_filters.append(('pos_{}'.format(build), '>=', start))
+        row_grp_filters.append(('pos', '>=', start))
     if end:
-        row_grp_filters.append(('pos_{}'.format(build), '<=', end))
+        row_grp_filters.append(('pos', '<=', end))
+
+    # Add biofeature to path
+    if biofeature:
+        in_pq = os.path.join(in_pq, 'biofeature={}'.format(biofeature))
 
     # Create column filters
-    # TODO
+    cols_to_keep = ['study_id', 'phenotype_id', 'chrom', 'pos',
+                    'ref', 'alt', 'beta', 'se', 'pval', 'n_total', 'n_cases',
+                    'eaf', 'is_cc']
 
     # Read file
-    df = dd.read_parquet(in_pq,
+    in_pq_pattern = os.path.join(in_pq, '*.parquet')
+    df = dd.read_parquet(in_pq_pattern,
+                         columns=cols_to_keep,
                          filters=row_grp_filters,
                          engine='fastparquet')
 
     # Conversion to in-memory pandas
-    df = df.compute(scheduler='single-threaded') # DEBUG
-    # df = df.astype(dtype=get_meta_info(type='sumstats'))
+    df = df.compute(scheduler='single-threaded')
 
     # Apply row filters
-    query = ' & '.join(
-        ['{} {} {}'.format(
-            filter[0],
-            filter[1],
-            '"{}"'.format(filter[2]) if isinstance(filter[2], str) else filter[2])
-         for filter in row_grp_filters] )
+    query_parts = []
+    for part in row_grp_filters:
+        if isinstance(part[2], int):
+            query_parts.append('{} {} {}'.format(part[0], part[1], part[2]))
+        else:
+            query_parts.append('{} {} "{}"'.format(part[0], part[1], part[2]))
+    query = ' & '.join(query_parts)
     df = df.query(query)
 
-    #
-    # Extract fields
-    #
-
-    # Extract n_samples
-    df['n_samples'] = np.where(pd.isnull(df['n_samples_variant_level']),
-                               df['n_samples_study_level'],
-                               df['n_samples_variant_level'])
-    # Extract n_cases
-    df['n_cases'] = np.where(pd.isnull(df['n_cases_variant_level']),
-                             df['n_cases_study_level'],
-                             df['n_cases_variant_level'])
-
-    # Extract EAF. TODO this needs to be changed to use estimated EAF if EAF_est
-    if pd.isnull(df['eaf']).any():
-        if logger:
-            logger.warning('Warning: using MAF instead of EAF')
-    df['eaf'] = np.where(pd.isnull(df['eaf']),
-                             df['maf'],
-                             df['eaf'])
-
-    # Extract required build
-    df['variant_id'] = df['variant_id_{0}'.format(build)]
-    df['pos'] = df['pos_{0}'.format(build)]
+    # Add biofeature back in
+    df.loc[:, 'biofeature'] = biofeature
 
     #
     # Make exclusions
@@ -94,22 +71,14 @@ def load_sumstats(in_pq, study_id, cell_id=None, group_id=None, trait_id=None,
 
     # Exclude on MAF
     if min_maf:
-        to_exclude = ( df['eaf'].apply(eaf_to_maf) < min_maf )
+        to_exclude = (df['eaf'].apply(eaf_to_maf) < min_maf)
         df = df.loc[~to_exclude, :]
 
-    # Exclude MHC
-    if excl_mhc and (df.chrom == '6').any():
-        # Exclude MHC
-        if excl_mhc == 'b37':
-            is_mhc = ( (df['chrom'] == '6') &
-                       (df['pos_b37'] >= 28477797) &
-                       (df['pos_b37'] <= 33448354) )
-            df = df.loc[~is_mhc, :]
-        elif excl_mhc == 'b38':
-            is_mhc = ( (df['chrom'] == '6') &
-                       (df['pos_b38'] >= 28510120) &
-                       (df['pos_b38'] <= 33480577) )
-            df = df.loc[~is_mhc, :]
+    # Create a variant ID
+    df['variant_id'] = (
+        df.loc[:, ['chrom', 'pos', 'ref', 'alt']]
+        .apply(lambda row: ':'.join([str(x) for x in row]), axis=1)
+    )
 
     return df
 
