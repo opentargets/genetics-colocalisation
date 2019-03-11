@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
 
+set -euo pipefail
+
 # {
 #     "left_type": "gwas",
 #     "left_study_id": "GCST004132_cr",
@@ -22,8 +24,6 @@
 #     "min_num_tags": 4,
 #     "proportion_overlap": 1.0
 # }
-
-set -euo pipefail
 
 # python scripts/coloc_wrapper.py \
 #   --left_sumstat "../genetics-finemapping/example_data/sumstats/gwas/GCST004132_cr.parquet" \
