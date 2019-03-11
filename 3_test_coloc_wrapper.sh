@@ -107,7 +107,7 @@ python scripts/coloc_wrapper.py \
   --window_coloc "500" \
   --window_cond "2000" \
   --min_maf "0.01" \
-  --out "output/left_study=GCST004132_cr/left_phenotype=/left_biofeature=/left_variant=22_21590807_T_A/right_study=CEDAR/right_phenotype=ILMN_1677877/right_biofeature=MONOCYTE_CD14/right_variant=22_21625295_C_T/coloc_res.json" \
+  --out "output/left_study=GCST004132_cr/left_phenotype=/left_biofeature=/left_variant=22_21590807_T_A/right_study=CEDAR/right_phenotype=ILMN_1677877/right_biofeature=MONOCYTE_CD14/right_variant=22_21625295_C_T/coloc_res.json.gz" \
   --plot "plots/GCST004132_cr__22_21590807_T_A_CEDAR_ILMN_1677877_MONOCYTE_CD14_22_21625295_C_T.plot.png" \
   --log "logs/left_study=GCST004132_cr/left_phenotype=/left_biofeature=/left_variant=22_21590807_T_A/right_study=CEDAR/right_phenotype=ILMN_1677877/right_biofeature=MONOCYTE_CD14/right_variant=22_21625295_C_T/log_file.txt" \
   --tmpdir "tmp/left_study=GCST004132_cr/left_phenotype=/left_biofeature=/left_variant=22_21590807_T_A/right_study=CEDAR/right_phenotype=ILMN_1677877/right_biofeature=MONOCYTE_CD14/right_variant=22_21625295_C_T/"

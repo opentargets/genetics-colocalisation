@@ -5,33 +5,20 @@
 #
 
 import argparse
-import pandas as pd
+import gzip
 
 def main():
 
     # Args
     args = parse_args()
 
-    # Load
-    dfs = (pd.read_json(inf, orient='records', lines=True)
-           for inf in args.in_json)
-
-    # Concatenate
-    full_df = pd.concat(dfs, ignore_index=True)
-
-    # Write json
-    full_df.to_json(
-        args.out,
-        orient='records',
-        lines=True
-    )
-
-    # Write tsv
-    full_df.to_csv(
-        args.out.replace('.json', '.tsv'),
-        sep='\t',
-        index=None
-    )
+    # Concat together
+    with gzip.open(args.out, 'w') as out_h:
+        for inf in args.in_json:
+            with gzip.open(inf, 'r') as in_h:
+                for line in in_h:
+                    line = line.decode().rstrip()
+                    out_h.write((line + '\n').encode())
 
     return 0
 
@@ -60,3 +47,4 @@ def parse_args():
 if __name__ == '__main__':
 
     main()
+

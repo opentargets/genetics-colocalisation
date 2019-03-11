@@ -4,6 +4,7 @@
 
 import sys
 import os
+import gzip
 import argparse
 import logging
 import pprint
@@ -14,7 +15,7 @@ import dask.dataframe as dd
 import subprocess as sp
 import json
 from datetime import datetime
-from numpy import log10
+from numpy import log10, log2
 # Plotting libraries
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -226,8 +227,8 @@ def main():
                 res[key] = args.__dict__[key]
 
         # Write results
-        with open(args.out, 'w') as out_h:
-            json.dump(res, out_h)
+        with gzip.open(args.out, 'w') as out_h:
+            out_h.write(json.dumps(res).encode())
 
     else:
         logger.error('Cannot run coloc with no intersection')
@@ -242,12 +243,21 @@ def main():
     if args.plot and (sumstat_int_left.shape[0] > 0):
 
         logger.info('Plotting')
-        os.makedirs(os.path.split(args.plot)[0], exist_ok=True)
+        
+
+        # Add coloc value to front of filename
+        coloc_val = log2(res['PP.H4.abf'] / res['PP.H3.abf'])
+        dirname, basename = os.path.split(args.plot)
+        basename = '{0:.2f}_{1}'.format(coloc_val, basename)
+        out_plot_name = os.path.join(dirname, basename)
+        
+        # Make output folder and run
+        os.makedirs(dirname, exist_ok=True)
         run_make_coloc_plot(sumstat_int_left,
                             sumstat_int_right,
                             res['PP.H4.abf'],
                             res['PP.H3.abf'],
-                            args.plot)
+                            out_plot_name)
 
     # --------------------------------------------------------------------------
     # Output results

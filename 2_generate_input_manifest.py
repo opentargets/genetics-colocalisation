@@ -22,7 +22,7 @@ def main():
 
     # File paths patterns
     sumstats = '../genetics-finemapping/example_data/sumstats/{type}/{study_id}.parquet'
-    out = "output/left_study={left_study}/left_phenotype={left_phenotype}/left_biofeature={left_biofeature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_biofeature={right_biofeature}/right_variant={right_variant}/coloc_res.json"
+    out = "output/left_study={left_study}/left_phenotype={left_phenotype}/left_biofeature={left_biofeature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_biofeature={right_biofeature}/right_variant={right_variant}/coloc_res.json.gz"
     log = "logs/left_study={left_study}/left_phenotype={left_phenotype}/left_biofeature={left_biofeature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_biofeature={right_biofeature}/right_variant={right_variant}/log_file.txt"
     tmpdir = "tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_biofeature={left_biofeature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_biofeature={right_biofeature}/right_variant={right_variant}/"
     plot = "plots/{left_study}_{left_phenotype}_{left_biofeature}_{left_variant}_{right_study}_{right_phenotype}_{right_biofeature}_{right_variant}.png"
@@ -41,18 +41,22 @@ def main():
             for side in ['left', 'right']:
 
                 # Add file information
+                study_type = 'gwas' if in_record['{}_type'.format(side)] == 'gwas' else 'molecular_trait'
                 out_record['{}_sumstats'.format(side)] = sumstats.format(
-                    type=in_record['{}_type'.format(side)],
+                    type=study_type,
                     study_id=in_record['{}_study_id'.format(side)])
                 out_record['{}_ld'.format(side)] = ld_path.format(
                     chrom=in_record['{}_lead_chrom'.format(side)])
                 
                 # Add study identifiers
-                identifiers = ['study_id', 'phenotype_id', 'biofeature', 'lead_chrom',
+                identifiers = ['study_id', 'type', 'phenotype_id', 'biofeature', 'lead_chrom',
                                'lead_pos', 'lead_ref', 'lead_alt']
                 for i in identifiers:
                     out_record['{}_{}'.format(side, i)] = in_record.get('{}_{}'.format(side, i), None)
-                
+
+            # Add method (always conditional for now)
+            out_record['method'] = 'conditional'
+            
             # Add output files
             left_variant = '_'.join(
                 [str(in_record['left_lead_{}'.format(part)])
