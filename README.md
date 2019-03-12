@@ -35,4 +35,7 @@ find output -name "*.json" | wc -l
 # Parse time taken for each run
 find logs -name "log_file.txt" -exec grep "Time taken" {} \;
 
+# Parse time taken to load right sumstats
+find logs -name "log_file.txt" -exec "Loading right" -A 1 {} \;
+
 ```
