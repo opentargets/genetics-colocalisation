@@ -33,7 +33,7 @@ def main():
     # Load
     df = (
         spark.read.json(args.in_credset)
-             .select('type', 'study_id', 'phenotype_id', 'biofeature', 'lead_chrom',
+             .select('type', 'study_id', 'phenotype_id', 'bio_feature', 'lead_chrom',
                      'lead_pos', 'lead_ref', 'lead_alt', 'tag_chrom', 'tag_pos',
                      'tag_ref', 'tag_alt', 'is95_credset', 'is99_credset',
                      'multisignal_method')
@@ -50,7 +50,7 @@ def main():
     df = df.drop('is95_credset', 'is99_credset', 'multisignal_method')
 
     # Study identifier columns
-    study_cols = ['type', 'study_id', 'phenotype_id', 'biofeature',
+    study_cols = ['type', 'study_id', 'phenotype_id', 'bio_feature',
                   'lead_chrom', 'lead_pos', 'lead_ref', 'lead_alt']
 
     # Create a single key column as an identifier for the study
@@ -116,12 +116,12 @@ def main():
         overlap_counts.right_key == col('right_tag_counts.key')
     ).drop('key').cache()
 
-    # Calc maximum proportion overlapping from either left or right
+
+    # Calc proportion of overlapping tags in left and right datasets
     overlap_counts = (
         overlap_counts
-        .withColumn('min_num_tags', when(col('left_num_tags') < col('right_num_tags'), col('left_num_tags')).otherwise(col('right_num_tags')))
-        .withColumn('proportion_overlap', col('num_overlapping') / col('min_num_tags'))
-        # .drop('min_num_tags')
+        .withColumn('left_overlap_prop', col('num_overlapping') / col('left_num_tags'))
+        .withColumn('right_overlap_prop', col('num_overlapping') / col('right_num_tags'))
     )
 
     # Write

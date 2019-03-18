@@ -53,7 +53,7 @@ def main():
         in_pq=args.left_sumstat,
         study_id=args.left_study,
         phenotype_id=args.left_phenotype,
-        biofeature=args.left_biofeature,
+        bio_feature=args.left_bio_feature,
         chrom=args.left_chrom,
         start=args.left_pos - args.window_cond * 1000,
         end=args.left_pos + args.window_cond * 1000,
@@ -68,7 +68,7 @@ def main():
         in_pq=args.right_sumstat,
         study_id=args.right_study,
         phenotype_id=args.right_phenotype,
-        biofeature=args.right_biofeature,
+        bio_feature=args.right_bio_feature,
         chrom=args.right_chrom,
         start=args.right_pos - args.window_cond * 1000,
         end=args.right_pos + args.window_cond * 1000,
@@ -102,13 +102,13 @@ def main():
         query_left = make_pandas_top_loci_query(
             study_id=args.left_study,
             phenotype_id=args.left_phenotype,
-            biofeature=args.left_biofeature,
+            bio_feature=args.left_bio_feature,
             chrom=args.left_chrom)
         top_loci_left = top_loci.query(query_left)
         query_right = make_pandas_top_loci_query(
             study_id=args.right_study,
             phenotype_id=args.right_phenotype,
-            biofeature=args.right_biofeature,
+            bio_feature=args.right_bio_feature,
             chrom=args.right_chrom)
         top_loci_right = top_loci.query(query_right)
 
@@ -221,7 +221,7 @@ def main():
 
         # Add columns to result file
         for prefix in ['left_', 'right_']:
-            for suffix in ['type', 'sumstat', 'study', 'phenotype', 'biofeature',
+            for suffix in ['type', 'sumstat', 'study', 'phenotype', 'bio_feature',
                            'chrom', 'pos', 'ref', 'alt']:
                 key = prefix + suffix
                 res[key] = args.__dict__[key]
@@ -335,14 +335,14 @@ def run_coloc(script, left_ss, right_ss, tmp_dir, logger):
     return res_dict
 
 def make_pandas_top_loci_query(study_id, phenotype_id=None,
-                               biofeature=None, chrom=None):
+                               bio_feature=None, chrom=None):
     ''' Creates query to extract top loci for specific study
     '''
     queries = ['study_id == "{}"'.format(study_id)]
     if phenotype_id:
         queries.append('phenotype_id == "{}"'.format(phenotype_id))
-    if biofeature:
-        queries.append('biofeature == "{}"'.format(biofeature))
+    if bio_feature:
+        queries.append('bio_feature == "{}"'.format(bio_feature))
     if chrom:
         queries.append('chrom == "{}"'.format(chrom))
     return ' & '.join(queries)
@@ -382,8 +382,8 @@ def parse_args():
     p.add_argument('--left_phenotype',
                    help=("Left phenotype_id"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--left_biofeature',
-                   help=("Left biofeature"),
+    p.add_argument('--left_bio_feature',
+                   help=("Left bio_feature"),
                    metavar="<str>", type=str, required=False)
     p.add_argument('--left_chrom',
                    help=("Left chromomsome"),
@@ -414,8 +414,8 @@ def parse_args():
     p.add_argument('--right_phenotype',
                    help=("Right phenotype_id"),
                    metavar="<str>", type=str, required=False)
-    p.add_argument('--right_biofeature',
-                   help=("Right biofeature"),
+    p.add_argument('--right_bio_feature',
+                   help=("Right bio_feature"),
                    metavar="<str>", type=str, required=False)
     p.add_argument('--right_chrom',
                    help=("Right chromomsome"),

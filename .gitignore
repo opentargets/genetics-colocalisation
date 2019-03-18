@@ -4,6 +4,7 @@ logs/
 tmp/
 plots/
 cromwell-*
+old/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

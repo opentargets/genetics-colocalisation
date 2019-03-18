@@ -29,20 +29,24 @@ def perfrom_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
     gcta_out = os.path.join(temp_dir, '{0}.{1}.gcta_out'.format(
         file_pref,
         index_var.replace(':', '_')))
-
-    # Write sumstats
-    sumstat_to_gcta(sumstats, gcta_in)
-
-    # Write a conditional list
+    gcta_snplist = os.path.join(temp_dir, '{0}.{1}.snplist.txt'.format(
+        file_pref,
+        index_var.replace(':', '_')))
     gcta_cond = os.path.join(temp_dir, '{0}.{1}.cond_list.txt'.format(
         file_pref,
         index_var.replace(':', '_')))
+
+    # Write sumstats
+    sumstat_to_gcta(sumstats, gcta_in, gcta_snplist)
+
+    # Write a conditional list
     write_cond_list(condition_on, gcta_cond)
 
     # Constuct command
     cmd =  [
         'gcta64 --bfile {0}'.format(in_plink.format(chrom=chrom)),
         '--chr {0}'.format(chrom),
+        '--extract {0}'.format(gcta_snplist),
         '--cojo-file {0}'.format(gcta_in),
         '--cojo-cond {0}'.format(gcta_cond),
         '--out {0}'.format(gcta_out)
@@ -118,7 +122,7 @@ def write_cond_list(cond_list, outf):
             out_h.write(var.replace('_', ':') + '\n')
     return outf
 
-def sumstat_to_gcta(sumstats, outf, p_threshold=None):
+def sumstat_to_gcta(sumstats, outf, snplist, p_threshold=None):
     ''' Writes a sumstat df as a GCTA compliant file
     Args:
         sumstats (pd.df)
@@ -143,8 +147,11 @@ def sumstat_to_gcta(sumstats, outf, p_threshold=None):
     if p_threshold:
         outdata = outdata.loc[outdata['p'] <= p_threshold, :]
 
-    # Save
+    # Save sumstats
     outdata.to_csv(outf, sep='\t', index=None)
+
+    # Save snplist
+    outdata.SNP.to_csv(snplist, index=None, header=None)
 
     return 0
 
@@ -155,6 +162,6 @@ def make_file_name_prefix(row):
     Return:
         str
     '''
-    cols = ['study_id', 'phenotype_id', 'biofeature', 'chrom']
+    cols = ['study_id', 'phenotype_id', 'bio_feature', 'chrom']
     pref = '_'.join([str(x) for x in row[cols].values[0]])
     return pref
