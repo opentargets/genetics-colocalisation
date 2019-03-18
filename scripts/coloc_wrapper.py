@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 
+import seaborn as sns
+import matplotlib.pyplot as plt
 import sys
 import os
 import gzip
@@ -16,9 +18,6 @@ import subprocess as sp
 import json
 from datetime import datetime
 from numpy import log10, log2
-# Plotting libraries
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 def main():
 
@@ -243,6 +242,9 @@ def main():
     if args.plot and (sumstat_int_left.shape[0] > 0):
 
         logger.info('Plotting')
+
+
+        # Plotting libraries
         
 
         # Add coloc value to front of filename
