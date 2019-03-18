@@ -17,7 +17,8 @@ def main():
     # Parse args
     in_overlap_table = glob('tmp/overlap_table.json/*.json')[0]
     out_manifest = 'configs/manifest.json'
-    prop_threshold = 0.10
+    overlap_prop_threshold = 0.10
+    max_credset_threshold = 2000
 
     # # In path patterns (local)
     # sumstats = '../genetics-finemapping/example_data/sumstats/{type}_2/{study_id}.parquet'
@@ -42,7 +43,10 @@ def main():
             # Skip if proportion_overlap < prop_threshold
             max_overlap_prop = max(in_record['left_overlap_prop'],
                                    in_record['right_overlap_prop'])
-            if max_overlap_prop < prop_threshold:
+            max_credset_size = max(in_record['left_num_tags'],
+                                   in_record['right_num_tags'])
+            if ((max_overlap_prop < overlap_prop_threshold) or
+                (max_credset_size > max_credset_threshold)):
                 continue
             
             # Add information for left/right
