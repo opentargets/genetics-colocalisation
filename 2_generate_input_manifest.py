@@ -18,10 +18,16 @@ def main():
     in_overlap_table = glob('tmp/overlap_table.json/*.json')[0]
     out_manifest = 'configs/manifest.json'
     prop_threshold = 0.10
-    ld_path = '/Users/em21/Projects/reference_data/uk10k_2019Feb/3_liftover_to_GRCh38/output/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
 
-    # File paths patterns
-    sumstats = '../genetics-finemapping/example_data/sumstats/{type}_2/{study_id}.parquet'
+    # # In path patterns (local)
+    # sumstats = '../genetics-finemapping/example_data/sumstats/{type}_2/{study_id}.parquet'
+    # ld_path = '/Users/em21/Projects/reference_data/uk10k_2019Feb/3_liftover_to_GRCh38/output/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
+    
+    # In path patterns (server)
+    sumstats = '/home/em21/data/sumstats/{type}_2/{study_id}.parquet'
+    ld_path = '/home/em21/data/uk10k/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
+
+    # Out path patterns
     out = "output/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
     log = "logs/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
     tmpdir = "tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
