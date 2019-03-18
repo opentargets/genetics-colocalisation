@@ -11,14 +11,15 @@ from pprint import pprint
 from glob import glob
 import json
 from collections import OrderedDict
+import gzip
 
 def main():
 
     # Parse args
-    in_overlap_table = glob('tmp/overlap_table.json/*.json')[0]
-    out_manifest = 'configs/manifest.json'
-    overlap_prop_threshold = 0.10
-    max_credset_threshold = 2000
+    in_overlap_table = glob('configs/overlap_table/*.json.gz')[0]
+    out_manifest = 'configs/manifest.json.gz'
+    overlap_prop_threshold = 0.01
+    max_credset_threshold = None
 
     # # In path patterns (local)
     # sumstats = '../genetics-finemapping/example_data/sumstats/{type}_2/{study_id}.parquet'
@@ -35,19 +36,24 @@ def main():
     plot = "plots/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
 
     manifest = []
-    with open(in_overlap_table, 'r') as in_h:
+    with gzip.open(in_overlap_table, 'r') as in_h:
         for in_record in in_h:
-            in_record = json.loads(in_record)
+            in_record = json.loads(in_record.decode())
             out_record = OrderedDict()
 
             # Skip if proportion_overlap < prop_threshold
-            max_overlap_prop = max(in_record['left_overlap_prop'],
-                                   in_record['right_overlap_prop'])
-            max_credset_size = max(in_record['left_num_tags'],
-                                   in_record['right_num_tags'])
-            if ((max_overlap_prop < overlap_prop_threshold) or
-                (max_credset_size > max_credset_threshold)):
-                continue
+            if overlap_prop_threshold:
+                max_overlap_prop = max(in_record['left_overlap_prop'],
+                                    in_record['right_overlap_prop'])
+                if max_overlap_prop < overlap_prop_threshold:
+                    continue
+
+            #  Skip if the biggest credible has > max_credset_threshold variants
+            if max_credset_threshold:
+                max_credset_size = max(in_record['left_num_tags'],
+                                    in_record['right_num_tags'])
+                if max_credset_size > max_credset_threshold:
+                    continue
             
             # Add information for left/right
             for side in ['left', 'right']:
@@ -136,9 +142,9 @@ def main():
 
     # Write manifest file
     os.makedirs(os.path.dirname(out_manifest), exist_ok=True)
-    with open(out_manifest, 'w') as out_h:
+    with gzip.open(out_manifest, 'w') as out_h:
         for record in manifest:
-            out_h.write(json.dumps(record) + '\n')
+            out_h.write((json.dumps(record) + '\n').encode())
 
     return 0
 

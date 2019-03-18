@@ -5,6 +5,9 @@ Work in progress. Preliminary scripts are [here](https://github.com/edm1/coloc_i
 
 Note pyarrow rowGroup filter is not due until version [0.13.0](https://issues.apache.org/jira/browse/ARROW-1796). Until then will have to use Dask/fastparquet + glob to read the Spark written parquet files.
 
+Todo:
+- Save the overlap table
+
 ### Requirements
 - [conda](https://conda.io/docs/)
 

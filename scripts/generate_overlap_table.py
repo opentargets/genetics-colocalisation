@@ -129,7 +129,8 @@ def main():
         overlap_counts.coalesce(1)
         .drop('left_key', 'right_key')
         .write.json(args.outf,
-                    mode='overwrite')
+                    mode='overwrite',
+                    compression='gzip')
     )
 
     return 0
