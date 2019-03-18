@@ -10,12 +10,13 @@ import os
 import sys
 import json
 import argparse
+import gzip
 
 def main():
 
     # Args
     args = parse_args()
-    in_manifest = 'configs/manifest.json'
+    in_manifest = 'configs/manifest.json.gz'
     out_todo = 'commands_todo.txt'
     out_done = 'commands_done.txt'
 
@@ -33,11 +34,11 @@ def main():
     done_h = open(out_done, 'w')
     
     # Iterate over manifest
-    with open(in_manifest, 'r') as in_mani:
+    with gzip.open(in_manifest, 'r') as in_mani:
         for line in in_mani:
 
             # Parse
-            rec = json.loads(line.rstrip())
+            rec = json.loads(line.decode().rstrip())
             # pprint(rec)
 
             # Build command

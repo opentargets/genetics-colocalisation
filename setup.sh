@@ -16,18 +16,17 @@ echo export PATH="$HOME/miniconda/bin:\$PATH" >> ~/.profile
 conda install --yes pandas
 
 # Install R
+sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+sudo apt update
 sudo apt-get update
 sudo apt-get -y install r-base-core
-sudo apt-get -y install libxml2-dev
-sudo apt-get -y install libcurl4-openssl-dev
-sudo apt-get -y install libssl-dev
+sudo apt-get -y install libxml2-dev libssl-dev libcurl4-openssl-dev
 
-# Install coloc - Need to open R and run these commands
+# Install coloc - Need to open R as sudo and run these commands
 # source("https://bioconductor.org/biocLite.R")
 # biocLite("snpStats")
 # install.packages('coloc')
 # install.packages("tidyverse")
-
-
 
 echo COMPLETE

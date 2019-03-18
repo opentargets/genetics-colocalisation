@@ -7,6 +7,7 @@ Note pyarrow rowGroup filter is not due until version [0.13.0](https://issues.ap
 
 Todo:
 - Save the overlap table
+- Use example data to calculate manifest params to reduce number of tests in final dataset
 
 ### Requirements
 - [conda](https://conda.io/docs/)

@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-cores=4
+cores=64
 instance_name="em-finemap-ssd"
 instance_zone="europe-west1-d"
 
