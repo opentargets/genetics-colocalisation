@@ -132,7 +132,6 @@ def main():
             logger.info(' Left, finished conditioning, {} variants remain'.format(
                 sumstat_cond_left.shape[0]))
             # Copy the conditional stats into the original positions
-            print(sumstat_cond_left.loc[sumstat_cond_left['pos'] == 39304989, :])
             sumstat_cond_left['beta'] = sumstat_cond_left['beta_cond']
             sumstat_cond_left['se'] = sumstat_cond_left['se_cond']
             sumstat_cond_left['pval'] = sumstat_cond_left['pval_cond']
