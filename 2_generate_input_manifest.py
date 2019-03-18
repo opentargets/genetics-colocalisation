@@ -130,6 +130,8 @@ def main():
     # for i, colname in enumerate(df.columns):
     #     print(i, colname)
 
+    # Write manifest file
+    os.makedirs(os.path.dirname(out_manifest), exist_ok=True)
     with open(out_manifest, 'w') as out_h:
         for record in manifest:
             out_h.write(json.dumps(record) + '\n')
