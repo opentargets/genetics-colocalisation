@@ -32,6 +32,7 @@ def main():
     # Args
     in_res_pattern = 'output/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
     out_coloc = 'results/coloc'
+    make_symmetrical = True # Will make the coloc matrix symmetrical
 
     # Load
     df = spark.read.json(in_res_pattern)
@@ -47,6 +48,31 @@ def main():
         .withColumn('coloc_h4_H3', (col('coloc_h4') / col('coloc_h3')))
         .withColumn('coloc_log_H4_H3', log(col('coloc_h4_H3')))
     )
+
+    # Make symmetrical
+    if make_symmetrical:
+
+        df_rev = df
+
+        # Move all left_ columns to temp_
+        for colname in [x for x in df_rev.columns if x.startswith('left_')]:
+            df_rev = df_rev.withColumnRenamed(
+                colname, colname.replace('left_', 'temp_'))
+        
+        # Move all right_ columns to left_
+        for colname in [x for x in df_rev.columns if x.startswith('right_')]:
+            df_rev = df_rev.withColumnRenamed(
+                colname, colname.replace('right_', 'left_'))
+
+        # Move all temp_ columns to right_
+        for colname in [x for x in df_rev.columns if x.startswith('temp_')]:
+            df_rev = df_rev.withColumnRenamed(
+                colname, colname.replace('temp_', 'right_'))
+        
+        # Take union by name between original and flipped dataset
+        df = df.withColumn('is_flipped', lit(False))
+        df_rev = df_rev.withColumn('is_flipped', lit(True))
+        df = df.unionByName(df_rev)
 
     # Write
     (
