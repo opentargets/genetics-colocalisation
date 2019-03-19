@@ -32,7 +32,7 @@ def main():
     # Args
     in_res_pattern = 'output/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
     out_coloc = 'results/coloc'
-    make_symmetrical = True # Will make the coloc matrix symmetrical
+    make_symmetric = True # Will make the coloc matrix symmetric
 
     # Load
     df = spark.read.json(in_res_pattern)
@@ -49,8 +49,8 @@ def main():
         .withColumn('coloc_log_H4_H3', log(col('coloc_h4_H3')))
     )
 
-    # Make symmetrical
-    if make_symmetrical:
+    # Make symmetric
+    if make_symmetric:
 
         df_rev = df
 
