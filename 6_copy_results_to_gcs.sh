@@ -13,3 +13,6 @@ gsutil -m cp logs.tar.gz gs://genetics-portal-staging/coloc/$version_date/logs.t
 # Tar the logs and copy over
 tar -zcvf plots.tar.gz plots
 gsutil -m cp plots.tar.gz gs://genetics-portal-staging/coloc/$version_date/plots.tar.gz
+
+# Copy overlap table
+gsutil -m rsync configs/overlap_table gs://genetics-portal-staging/coloc/$version_date/overlap_table
