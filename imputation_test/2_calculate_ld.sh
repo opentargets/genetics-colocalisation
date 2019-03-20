@@ -4,6 +4,9 @@
 set -euo pipefail
 
 # Args
+cores=32
+instance_name="em-ld"
+instance_zone="europe-west1-d"
 script='scripts/calc_ld_1000G.py'
 in_ld='/home/em21/genetics-colocalisation/imputation_test/input_data/uk10k/CHROM.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
 in_varlist='input_data/var_list.tsv'
@@ -27,6 +30,8 @@ cat $in_varlist | while read line; do
       --min_r2 0.7 \
       --outf $outf
 
-done #| parallel -j 4
+done | parallel -j $cores
 
 echo COMPLETE
+
+gcloud compute instances stop $instance_name --zone=$instance_zone
