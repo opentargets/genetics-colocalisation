@@ -63,6 +63,7 @@ def calc_ld(varid, bfile, pop, ld_window, outf):
         '--r', 'gz',
         '--memory', 1000,
         '--threads', 1,
+        '--allow-extra-chr',
         '--out', outf
     ]
     cmd_str = ' '.join([str(x) for x in cmd])
