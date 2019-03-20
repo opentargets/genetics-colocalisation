@@ -4,11 +4,12 @@
 set -euo pipefail
 
 # Args
-in_ld='/home/em21/genetics-v2d-data/tmp/190315/ld/1000Genomep3/EUR/EUR.CHROM.1000Gp3.20130502.bed'
+script='scripts/calc_ld_1000G.py'
+in_ld='/home/em21/genetics-v2d-data/tmp/190315/ld/1000Genomep3/EUR/EUR.CHROM.1000Gp3.20130502'
 in_varlist='input_data/var_list.tsv'
 out_dir='ld_output'
 
-mkdir -p out_dir
+mkdir -p $out_dir
 
 # Construct commands
 cat $in_varlist | while read line; do
@@ -20,7 +21,7 @@ cat $in_varlist | while read line; do
     # Make command
     bfile=${in_ld/CHROM/${arr[0]}}
     outf="$out_dir/$var_id.ld.tsv.gz"
-    echo python calc_ld_1000G.py \
+    echo python $script \
       --varid $var_id \
       --bfile $bfile \
       --ld_window 1000000 \
