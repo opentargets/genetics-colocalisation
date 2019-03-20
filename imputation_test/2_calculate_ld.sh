@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Args
-in_ld='plink.placeholder'
+in_ld='/home/em21/genetics-v2d-data/tmp/190315/ld/1000Genomep3/EUR/EUR.CHROM.1000Gp3.20130502.bed'
 in_varlist='input_data/var_list.tsv'
 out_dir='ld_output'
 
@@ -18,14 +18,15 @@ cat $in_varlist | while read line; do
     var_id=${arr[0]}_${arr[1]}_${arr[2]}_${arr[3]}
 
     # Make command
+    bfile=${in_ld/CHROM/${arr[0]}}
     outf="$out_dir/$var_id.ld.tsv.gz"
     echo python calc_ld_1000G.py \
       --varid $var_id \
-      --bfile $in_ld \
+      --bfile $bfile \
       --ld_window 1000000 \
       --min_r2 0.7 \
       --outf $outf
 
-done | parallel -j 4
+done #| parallel -j 4
 
 echo COMPLETE
