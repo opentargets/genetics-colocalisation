@@ -81,6 +81,10 @@ def calc_ld(varid, bfile, pop, ld_window, outf):
         # Replace : with _ in variant fields
         res.index_variant_id = res.index_variant_id.str.replace(':', '_')
         res.tag_variant_id = res.tag_variant_id.str.replace(':', '_')
+
+        # Remove res_file
+        os.remove(res_file)
+        
     except FileNotFoundError:
         '''
         TODO. I don't want this to pick up ANY missing. It should only create a
