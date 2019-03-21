@@ -5,6 +5,7 @@ tmp/
 plots/
 cromwell-*
 old/
+imputation_test/ld_output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
