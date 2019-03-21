@@ -17,6 +17,7 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 import argparse
 import sys
+import numpy as np
 
 def main():
 
@@ -28,7 +29,7 @@ def main():
     in_ld = 'input_data/ld.parquet'
     in_coloc = 'input_data/coloc.json.gz'
     in_top_loci = 'input_data/top_loci.json.gz'
-    # out_f = 'features.parquet'
+    out_f = 'features.csv'
 
     # Load
     ld = (
@@ -38,7 +39,8 @@ def main():
     )
     coloc = (
         spark.read.json(in_coloc)
-             .limit(100) # DEBUG
+             .filter(col('coloc_n_vars') > 200)
+            #  .limit(100) # DEBUG
              .fillna('None')
     )
     toploci = (
@@ -59,7 +61,7 @@ def main():
 
     # Make left ld dataset
     left = (
-        coloc.select('left_study', 'left_phenotype', 'left_bio_feature',
+        coloc.select('left_type', 'left_study', 'left_phenotype', 'left_bio_feature',
                      'left_chrom', 'left_pos', 'left_ref', 'left_alt')
         .join(ld,
               ((coloc.left_chrom == ld.lead_chrom) &
@@ -72,7 +74,7 @@ def main():
 
     # Make right ld dataset
     right = (
-        coloc.select('right_study', 'right_phenotype', 'right_bio_feature',
+        coloc.select('right_type', 'right_study', 'right_phenotype', 'right_bio_feature',
                      'right_chrom', 'right_pos', 'right_ref', 'right_alt')
         .join(ld,
               ((coloc.right_chrom == ld.lead_chrom) &
@@ -92,9 +94,9 @@ def main():
     # Count proportion overlapping for a range of R2 thresholds
     features = (
         intersection
-        .groupby('left_study', 'left_phenotype', 'left_bio_feature',
+        .groupby('left_type', 'left_study', 'left_phenotype', 'left_bio_feature',
                  'left_chrom', 'left_pos', 'left_ref', 'left_alt',
-                 'right_study', 'right_phenotype', 'right_bio_feature',
+                 'right_type', 'right_study', 'right_phenotype', 'right_bio_feature',
                  'right_chrom', 'right_pos', 'right_ref', 'right_alt')
             .agg(
                 count(col('left_R2_EUR')).alias('total_overlap'),
@@ -104,7 +106,9 @@ def main():
                 (count(when((col('left_R2_EUR') > 0.85) & (col('right_R2_EUR') > 0.85), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.85'),
                 (count(when((col('left_R2_EUR') > 0.9) & (col('right_R2_EUR') > 0.9), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.9'),
                 (count(when((col('left_R2_EUR') > 0.95) & (col('right_R2_EUR') > 0.95), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.95'),
-                (count(when((col('left_R2_EUR') > 1.0) & (col('right_R2_EUR') > 1.0), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_1.0')
+                (count(when((col('left_R2_EUR') > 0.975) & (col('right_R2_EUR') > 0.975), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.975'),
+                (count(when((col('left_R2_EUR') > 0.99) & (col('right_R2_EUR') > 0.99), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.99'),
+                (count(when((col('left_R2_EUR') >= 1.0) & (col('right_R2_EUR') >= 1.0), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_1.0')
             )
     ).cache()
 
@@ -150,8 +154,84 @@ def main():
     # Add -log(pval) for left/right leads from toploci table ------------------
     #
 
-    features.show(3)
-    print(features.columns)
+    # Get table of -log(pval)
+    pvals = (
+        toploci
+        .select('study_id', 'phenotype_id', 'bio_feature',
+                'chrom', 'pos', 'ref', 'alt', 'pval')
+        .withColumn('log_pval', -log10(col('pval')))
+        .fillna(-np.log10(sys.float_info.min))
+        .drop('pval')
+    )
+
+    # Merge to left
+    features = (
+        features.join(
+            pvals.alias('left_pvals').withColumnRenamed('log_pval', 'left_log_pval'),
+            (
+                (features.left_study == col('left_pvals.study_id')) &
+                (features.left_phenotype == col('left_pvals.phenotype_id')) &
+                (features.left_bio_feature == col('left_pvals.bio_feature')) &
+                (features.left_chrom == col('left_pvals.chrom')) &
+                (features.left_pos == col('left_pvals.pos')) &
+                (features.left_ref == col('left_pvals.ref')) &
+                (features.left_alt == col('left_pvals.alt'))
+            ))
+        .drop('study_id', 'phenotype_id', 'bio_feature', 'chrom', 'pos', 'ref', 'alt')
+
+    )
+
+    # Merge to right
+    features = (
+        features.join(
+            pvals.alias('right_pvals').withColumnRenamed('log_pval', 'right_log_pval'),
+            (
+                (features.right_study == col('right_pvals.study_id')) &
+                (features.right_phenotype == col('right_pvals.phenotype_id')) &
+                (features.right_bio_feature == col('right_pvals.bio_feature')) &
+                (features.right_chrom == col('right_pvals.chrom')) &
+                (features.right_pos == col('right_pvals.pos')) &
+                (features.right_ref == col('right_pvals.ref')) &
+                (features.right_alt == col('right_pvals.alt'))
+            ))
+        .drop('study_id', 'phenotype_id', 'bio_feature', 'chrom', 'pos', 'ref', 'alt')
+    )
+
+    #
+    # Add feature showing whether left/right is gwas --------------------------
+    #
+
+    features = (
+        features
+        .withColumn('left_is_gwas', when(col('left_type') == 'gwas', 1).otherwise(0))
+        .withColumn('right_is_gwas', when(col('right_type') == 'gwas', 1).otherwise(0))
+    )
+
+    #
+    # Merge coloc stats -------------------------------------------------------
+    #
+
+    features = (
+        features.alias('features').join(
+            coloc.alias('coloc'),
+            on=['left_type', 'left_study', 'left_phenotype', 'left_bio_feature', 'left_chrom', 'left_pos', 'left_ref', 'left_alt',
+                'right_type', 'right_study', 'right_phenotype', 'right_bio_feature', 'right_chrom', 'right_pos', 'right_ref', 'right_alt'])
+        .drop('coloc_h0', 'coloc_h1', 'coloc_h2', 'coloc_h4_H3', 'coloc_n_vars', 'is_flipped', 'left_sumstat', 'right_sumstat')
+    )
+
+    #
+    # Write output -------------------------------------------------------
+    #
+    
+    (
+        features
+        .coalesce(1)
+        .write.csv(
+            out_f,
+            header=True,
+            mode='overwrite'
+        )
+    )
 
 
 
