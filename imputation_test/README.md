@@ -24,3 +24,9 @@ Rows with LD only:  377
 Rows with coloc only:  25292
 - Occurs due to lack of LD between lead variants
 Rows with LD and coloc:  1010
+
+## When changing to R2 > 0.05
+
+Rows with LD only:  2597
+Rows with coloc only:  19723
+Rows with LD and coloc:  6584

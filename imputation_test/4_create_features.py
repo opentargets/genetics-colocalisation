@@ -18,6 +18,7 @@ from pyspark.sql.functions import *
 import argparse
 import sys
 import numpy as np
+import os
 
 def main():
 
@@ -29,7 +30,10 @@ def main():
     in_ld = 'input_data/ld.parquet'
     in_coloc = 'input_data/coloc.json.gz'
     in_top_loci = 'input_data/top_loci.json.gz'
-    out_f = 'features.csv'
+    out_f = 'output/features.csv'
+
+    # Make output dir
+    os.makedirs(os.path.dirname(out_f), exist_ok=True)
 
     # Load
     ld = (
@@ -41,7 +45,7 @@ def main():
         spark.read.json(in_coloc)
              .filter(col('coloc_n_vars') > 200)
              .fillna('None')
-        # Only use 'gwas' type in left
+             # Only use 'gwas' type in left
              .filter(col('left_type') == 'gwas')
             #  .limit(100) # DEBUG
     )
@@ -49,13 +53,6 @@ def main():
         spark.read.json(in_top_loci)
              .fillna('None')
     )
-
-    # ld.printSchema()
-    # print(ld.columns)
-    # coloc.printSchema()
-    # print(coloc.columns)
-    # toploci.printSchema()
-    # print(toploci.columns)
 
     #
     # Make LD overlap features ------------------------------------------------
@@ -111,7 +108,7 @@ def main():
     #     )
     #     .coalesce(1)
     #     .write.csv(
-    #         'intersection.csv',
+    #         'output/intersection.csv',
     #         mode='overwrite',
     #         header=True
     #     )
@@ -127,6 +124,12 @@ def main():
                  'right_chrom', 'right_pos', 'right_ref', 'right_alt')
             .agg(
                 count(when((col('left_R2_EUR') >= 0) & (col('right_R2_EUR') >= 0), lit(1))).alias('total_overlap'),
+                (count(when((col('left_R2_EUR') >= 0.1) & (col('right_R2_EUR') >= 0.1), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.1'),
+                (count(when((col('left_R2_EUR') >= 0.2) & (col('right_R2_EUR') >= 0.2), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.2'),
+                (count(when((col('left_R2_EUR') >= 0.3) & (col('right_R2_EUR') >= 0.3), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.3'),
+                (count(when((col('left_R2_EUR') >= 0.4) & (col('right_R2_EUR') >= 0.4), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.4'),
+                (count(when((col('left_R2_EUR') >= 0.5) & (col('right_R2_EUR') >= 0.5), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.5'),
+                (count(when((col('left_R2_EUR') >= 0.6) & (col('right_R2_EUR') >= 0.6), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.6'),
                 (count(when((col('left_R2_EUR') >= 0.7) & (col('right_R2_EUR') >= 0.7), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.7'),
                 (count(when((col('left_R2_EUR') >= 0.75) & (col('right_R2_EUR') >= 0.75), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.75'),
                 (count(when((col('left_R2_EUR') >= 0.8) & (col('right_R2_EUR') >= 0.8), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.8'),
