@@ -41,7 +41,7 @@ def main():
         spark.read.json(in_coloc)
              .filter(col('coloc_n_vars') > 200)
              .fillna('None')
-             # Only use 'gwas' type in left
+        # Only use 'gwas' type in left
              .filter(col('left_type') == 'gwas')
             #  .limit(100) # DEBUG
     )
@@ -63,28 +63,32 @@ def main():
 
     # Make left ld dataset
     left = (
-        coloc.select('left_type', 'left_study', 'left_phenotype', 'left_bio_feature',
+        coloc
+        .select('left_type', 'left_study', 'left_phenotype', 'left_bio_feature',
                      'left_chrom', 'left_pos', 'left_ref', 'left_alt')
-        .join(ld,
-              ((coloc.left_chrom == ld.lead_chrom) &
-               (coloc.left_pos == ld.lead_pos) &
-               (coloc.left_ref == ld.lead_ref) &
-               (coloc.left_alt == ld.lead_alt)))
-        .drop('lead_chrom', 'lead_pos', 'lead_ref', 'lead_alt')
-        .withColumnRenamed('R2_EUR', 'left_R2_EUR')
+        .distinct()
+        .join((ld.withColumnRenamed('lead_chrom', 'left_chrom')
+                .withColumnRenamed('lead_pos', 'left_pos')
+                .withColumnRenamed('lead_ref', 'left_ref')
+                .withColumnRenamed('lead_alt', 'left_alt')
+                .withColumnRenamed('R2_EUR', 'left_R2_EUR')),
+              on=['left_chrom', 'left_pos', 'left_ref', 'left_alt'],
+              how='inner')
     )
 
     # Make right ld dataset
     right = (
-        coloc.select('right_type', 'right_study', 'right_phenotype', 'right_bio_feature',
+        coloc
+        .select('right_type', 'right_study', 'right_phenotype', 'right_bio_feature',
                      'right_chrom', 'right_pos', 'right_ref', 'right_alt')
-        .join(ld,
-              ((coloc.right_chrom == ld.lead_chrom) &
-               (coloc.right_pos == ld.lead_pos) &
-               (coloc.right_ref == ld.lead_ref) &
-               (coloc.right_alt == ld.lead_alt)))
-        .drop('lead_chrom', 'lead_pos', 'lead_ref', 'lead_alt')
-        .withColumnRenamed('R2_EUR', 'right_R2_EUR')
+        .distinct()
+        .join((ld.withColumnRenamed('lead_chrom', 'right_chrom')
+                .withColumnRenamed('lead_pos', 'right_pos')
+                .withColumnRenamed('lead_ref', 'right_ref')
+                .withColumnRenamed('lead_alt', 'right_alt')
+                .withColumnRenamed('R2_EUR', 'right_R2_EUR')),
+            on=['right_chrom', 'right_pos', 'right_ref', 'right_alt'],
+            how='inner')   
     )
 
     # Make intersection
@@ -92,6 +96,27 @@ def main():
         right,
         on=['tag_chrom', 'tag_pos', 'tag_ref', 'tag_alt']
     )
+
+    # # DEBUG extract from overlap
+    # (
+    #     intersection
+    #     .filter(
+    #         (col('left_study') == 'GCST004131_ibd') &
+    #         (col('left_chrom') == 7) &
+    #         (col('left_pos') == 6505557) &
+    #         (col('right_study') == 'Blueprint') &
+    #         (col('right_phenotype') == 'ENSG00000215018') &
+    #         (col('right_bio_feature') == 'NEUTROPHIL') &
+    #         (col('right_pos') == 6457870)
+    #     )
+    #     .coalesce(1)
+    #     .write.csv(
+    #         'intersection.csv',
+    #         mode='overwrite',
+    #         header=True
+    #     )
+    # )
+    # sys.exit()
 
     # Count proportion overlapping for a range of R2 thresholds
     features = (
@@ -101,15 +126,14 @@ def main():
                  'right_type', 'right_study', 'right_phenotype', 'right_bio_feature',
                  'right_chrom', 'right_pos', 'right_ref', 'right_alt')
             .agg(
-                count(col('left_R2_EUR')).alias('total_overlap'),
-                (count(when((col('left_R2_EUR') > 0.7) & (col('right_R2_EUR') > 0.7), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.7'),
-                (count(when((col('left_R2_EUR') > 0.75) & (col('right_R2_EUR') > 0.75), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.75'),
-                (count(when((col('left_R2_EUR') > 0.8) & (col('right_R2_EUR') > 0.8), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.8'),
-                (count(when((col('left_R2_EUR') > 0.85) & (col('right_R2_EUR') > 0.85), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.85'),
-                (count(when((col('left_R2_EUR') > 0.9) & (col('right_R2_EUR') > 0.9), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.9'),
-                (count(when((col('left_R2_EUR') > 0.95) & (col('right_R2_EUR') > 0.95), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.95'),
-                (count(when((col('left_R2_EUR') > 0.975) & (col('right_R2_EUR') > 0.975), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.975'),
-                (count(when((col('left_R2_EUR') > 0.99) & (col('right_R2_EUR') > 0.99), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.99'),
+                count(when((col('left_R2_EUR') >= 0) & (col('right_R2_EUR') >= 0), lit(1))).alias('total_overlap'),
+                (count(when((col('left_R2_EUR') >= 0.7) & (col('right_R2_EUR') >= 0.7), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.7'),
+                (count(when((col('left_R2_EUR') >= 0.75) & (col('right_R2_EUR') >= 0.75), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.75'),
+                (count(when((col('left_R2_EUR') >= 0.8) & (col('right_R2_EUR') >= 0.8), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.8'),
+                (count(when((col('left_R2_EUR') >= 0.85) & (col('right_R2_EUR') >= 0.85), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.85'),
+                (count(when((col('left_R2_EUR') >= 0.9) & (col('right_R2_EUR') >= 0.9), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.9'),
+                (count(when((col('left_R2_EUR') >= 0.95) & (col('right_R2_EUR') >= 0.95), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.95'),
+                (count(when((col('left_R2_EUR') >= 0.975) & (col('right_R2_EUR') >= 0.975), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_0.975'),
                 (count(when((col('left_R2_EUR') >= 1.0) & (col('right_R2_EUR') >= 1.0), lit(1))) / count(col('left_R2_EUR'))).alias('prop_overlap_1.0')
             )
     ).cache()
@@ -140,8 +164,8 @@ def main():
     # Add proportions of left_num_tags/right_num_tags that overlap
     features = (
         features
-        .withColumn('left_prop_total_overlap', col('left_num_tags') / col('total_overlap'))
-        .withColumn('right_prop_total_overlap', col('right_num_tags') / col('total_overlap'))
+        .withColumn('left_prop_total_overlap', col('total_overlap') / col('left_num_tags'))
+        .withColumn('right_prop_total_overlap', col('total_overlap') / col('right_num_tags'))
     )
     
     #
