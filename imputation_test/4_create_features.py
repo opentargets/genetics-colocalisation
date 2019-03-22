@@ -40,8 +40,10 @@ def main():
     coloc = (
         spark.read.json(in_coloc)
              .filter(col('coloc_n_vars') > 200)
-            #  .limit(100) # DEBUG
              .fillna('None')
+             # Only use 'gwas' type in left
+             .filter(col('left_type') == 'gwas')
+            #  .limit(100) # DEBUG
     )
     toploci = (
         spark.read.json(in_top_loci)
@@ -134,11 +136,12 @@ def main():
     )
     features = features.join(right_n_tags, on=cols)
 
+
     # Add proportions of left_num_tags/right_num_tags that overlap
     features = (
         features
-        .withColumn('left_prop_total_overlap', col('total_overlap') / col('left_num_tags'))
-        .withColumn('right_prop_total_overlap', col('total_overlap') / col('right_num_tags'))
+        .withColumn('left_prop_total_overlap', col('left_num_tags') / col('total_overlap'))
+        .withColumn('right_prop_total_overlap', col('right_num_tags') / col('total_overlap'))
     )
     
     #
@@ -210,21 +213,39 @@ def main():
     #
     # Merge coloc stats -------------------------------------------------------
     #
-
     features = (
         features.alias('features').join(
             coloc.alias('coloc'),
             on=['left_type', 'left_study', 'left_phenotype', 'left_bio_feature', 'left_chrom', 'left_pos', 'left_ref', 'left_alt',
-                'right_type', 'right_study', 'right_phenotype', 'right_bio_feature', 'right_chrom', 'right_pos', 'right_ref', 'right_alt'])
+                'right_type', 'right_study', 'right_phenotype', 'right_bio_feature', 'right_chrom', 'right_pos', 'right_ref', 'right_alt'],
+            how='outer'
+        )       
         .drop('coloc_h0', 'coloc_h1', 'coloc_h2', 'coloc_h4_H3', 'coloc_n_vars', 'is_flipped', 'left_sumstat', 'right_sumstat')
-    )
-
+    ).cache()
+    
+    print('Rows with LD only: ', features.filter(col('total_overlap').isNotNull() & col('coloc_log_H4_H3').isNull()).count())
+    print('Rows with coloc only: ', features.filter(col('total_overlap').isNull() & col('coloc_log_H4_H3').isNotNull()).count())
+    print('Rows with LD and coloc: ', features.filter(col('total_overlap').isNotNull() & col('coloc_log_H4_H3').isNotNull()).count())
+    
     #
     # Write output -------------------------------------------------------
     #
-    
+
+    # Output outer join for debugging
     (
         features
+        .coalesce(1)
+        .write.csv(
+            out_f.replace('.csv', '.outer.csv'),
+            header=True,
+            mode='overwrite'
+        )
+    )
+
+    # Output inner join as final feature set
+    (
+        features
+        .filter(col('total_overlap').isNotNull() & col('coloc_log_H4_H3').isNotNull())
         .coalesce(1)
         .write.csv(
             out_f,

@@ -11,6 +11,7 @@ script='scripts/calc_ld_1000G.py'
 in_ld='/home/em21/genetics-colocalisation/imputation_test/input_data/uk10k/CHROM.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
 in_varlist='input_data/var_list.tsv'
 out_dir='ld_output'
+min_r2=0.05
 
 mkdir -p $out_dir
 
@@ -27,7 +28,7 @@ cat $in_varlist | while read line; do
       --varid $var_id \
       --bfile $in_ld \
       --ld_window 1000000 \
-      --min_r2 0.7 \
+      --min_r2 $min_r2 \
       --outf $outf
 
 done | parallel -j $cores
