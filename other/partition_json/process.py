@@ -33,7 +33,7 @@ def main():
     (
         spark.read.json(in_path)
         .write
-        .partitionBy('study_id', 'phenotype_id', 'bio_feature', 'lead_chrom')
+        .partitionBy('study_id', 'bio_feature', 'lead_chrom')
         .json(
             out_path,
             compression='gzip',
