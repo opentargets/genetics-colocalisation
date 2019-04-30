@@ -91,7 +91,7 @@ def main():
     )
 
     # Filter based on distance between lead variants
-    overlap = overlap.withColumns('lead_pos_distance', 
+    overlap = overlap.withColumn('lead_pos_distance', 
         abs(col('left_lead_pos') - col('right_lead_pos')))
     if args.max_dist:
         overlap = (
