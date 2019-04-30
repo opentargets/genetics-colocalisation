@@ -130,6 +130,16 @@ def main():
                             'out', 'log', 'tmpdir', 'plot']:
                 out_record[colname] = os.path.abspath(out_record[colname])
 
+            # Check that all input paths exist
+            for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld']:
+                # Get path
+                in_path = out_record[colname]
+                # If plink prefix, add .bed suffix
+                if colname == 'left_ld' or colname == 'right_ld':
+                    in_path = in_path + '.bed'
+                # Assert exists
+                assert os.path.exists(out_record[colname])
+
             manifest.append(out_record)
 
     # Write manifest file

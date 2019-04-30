@@ -52,4 +52,7 @@ find logs -name "log_file.txt" -exec grep "Time taken" {} \;
 # Parse time taken to load right sumstats
 find logs -name "log_file.txt" -exec "Loading right" -A 1 {} \;
 
+# Grep all log files
+ls -rt logs/left_study\=*/left_phenotype\=*/left_bio_feature\=*/left_variant\=*/right_study\=*/right_phenotype\=*/right_bio_feature\=*/right_variant\=*/log_file.txt | xargs grep "Time taken"
+
 ```
