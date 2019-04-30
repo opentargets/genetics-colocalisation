@@ -162,7 +162,7 @@ def parse_args():
     parser.add_argument('--max_dist',
                         metavar="<int>",
                         type=int,
-                        help='Max distance between left and right lead variants'
+                        help='Max distance between left and right lead variants',
                         required=False,
                         default=None)
     parser.add_argument('--which_set',
