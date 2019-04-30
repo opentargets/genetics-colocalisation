@@ -18,6 +18,7 @@ import subprocess as sp
 import json
 from datetime import datetime
 from numpy import log10, log2
+from shutil import rmtree
 
 def main():
 
