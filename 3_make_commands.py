@@ -25,7 +25,7 @@ def main():
     r_script = 'scripts/coloc.R'
     top_loci_file = '/home/ubuntu/results/finemapping/results/top_loci_by_chrom/CHROM.json'
     window_colc = 500 # in KB
-    window_cond = 2000  # in KB
+    window_cond = 1000  # in KB
     min_maf = 0.01
     make_plots = False
 
