@@ -87,7 +87,7 @@ def main():
         # Load top loci json
         logger.info(' Loading top loci table')
         top_loci = pd.read_json(
-            args.top_loci,
+            args.top_loci.replace('CHROM', args.left_chrom),
             orient='records',
             lines=True
         )
