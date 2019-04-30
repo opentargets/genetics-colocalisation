@@ -23,7 +23,11 @@ def main():
     args = parse_args()
 
     # Make spark session
-    spark = pyspark.sql.SparkSession.builder.getOrCreate()
+    spark = (
+        pyspark.sql.SparkSession.builder
+        .config("spark.master", "local[*]")
+        .getOrCreate()
+    )
     print('Spark version: ', spark.version)
 
     #
@@ -86,6 +90,17 @@ def main():
         .filter(col('left_key') > col('right_key'))
     )
 
+    # Filter based on distance between lead variants
+    overlap = overlap.withColumns('lead_pos_distance', 
+        abs(col('left_lead_pos') - col('right_lead_pos')))
+    if args.max_dist:
+        overlap = (
+            overlap.filter(col('lead_pos_distance') <= args.max_dist)
+        )
+
+    # Persist overlap table
+    overlap = overlap.persist()
+
     # Count overlaps
     group_by_cols = [prefix + colname for prefix in ['left_', 'right_']
                      for colname in study_cols]
@@ -144,6 +159,12 @@ def parse_args():
                         metavar="<parquet>",
                         type=str,
                         required=True)
+    parser.add_argument('--max_dist',
+                        metavar="<int>",
+                        type=int,
+                        help='Max distance between left and right lead variants'
+                        required=False,
+                        default=None)
     parser.add_argument('--which_set',
                         metavar="<95|99>",
                         type=str,

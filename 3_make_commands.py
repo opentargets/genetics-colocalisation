@@ -24,8 +24,8 @@ def main():
     script = 'scripts/coloc_wrapper.py'
     r_script = 'scripts/coloc.R'
     top_loci_file = '/home/em21/genetics-finemapping/results/top_loci.json.gz'
-    window_colc = 500
-    window_cond = 2000
+    window_colc = 500 # in KB
+    window_cond = 2000  # in KB
     min_maf = 0.01
     make_plots = True
 
