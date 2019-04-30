@@ -17,21 +17,21 @@ def main():
     # Args
     args = parse_args()
     in_manifest = 'configs/manifest.json.gz'
-    out_todo = 'commands_todo.txt'
-    out_done = 'commands_done.txt'
+    out_todo = 'commands_todo.txt.gz'
+    out_done = 'commands_done.txt.gz'
 
     # Pipeline args
     script = 'scripts/coloc_wrapper.py'
     r_script = 'scripts/coloc.R'
-    top_loci_file = '/home/em21/genetics-finemapping/results/top_loci.json.gz'
+    top_loci_file = '/home/ubuntu/results/finemapping/results/top_loci.json.gz'
     window_colc = 500 # in KB
     window_cond = 2000  # in KB
     min_maf = 0.01
-    make_plots = True
+    make_plots = False
 
     # Open command files
-    todo_h = open(out_todo, 'w')
-    done_h = open(out_done, 'w')
+    todo_h = gzip.open(out_todo, 'w')
+    done_h = gzip.open(out_done, 'w')
     
     # Iterate over manifest
     with gzip.open(in_manifest, 'r') as in_mani:
@@ -73,7 +73,8 @@ def main():
                 '--min_maf', min_maf,
                 '--out', os.path.abspath(rec['out']),
                 '--log', os.path.abspath(rec['log']),
-                '--tmpdir', os.path.abspath(rec['tmpdir'])
+                '--tmpdir', os.path.abspath(rec['tmpdir']),
+                '--delete_tmpdir'
             ]
 
             if make_plots:
@@ -83,10 +84,10 @@ def main():
 
             # Skip if output exists
             if os.path.exists(rec['out']):
-                done_h.write(cmd_str + '\n')
+                done_h.write((cmd_str + '\n').encode())
                 continue
             else:
-                todo_h.write(cmd_str + '\n')
+                todo_h.write((cmd_str + '\n').encode())
                 if not args.quiet:
                     print(cmd_str)
     

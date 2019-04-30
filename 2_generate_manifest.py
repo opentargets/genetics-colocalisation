@@ -16,7 +16,7 @@ import gzip
 def main():
 
     # Parse args
-    in_overlap_table = glob('configs/overlap_table/*.json.gz')[0]
+    in_overlap_table = glob('/home/ubuntu/results/coloc/overlap_table/*.json.gz')[0]
     out_manifest = 'configs/manifest.json.gz'
     overlap_prop_threshold = 0.01
     max_credset_threshold = None
@@ -26,14 +26,14 @@ def main():
     # ld_path = '/Users/em21/Projects/reference_data/uk10k_2019Feb/3_liftover_to_GRCh38/output/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
     
     # In path patterns (server)
-    sumstats = '/home/em21/data/sumstats/{type}_2/{study_id}.parquet'
-    ld_path = '/home/em21/data/uk10k/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
+    sumstats = '/home/ubuntu/data/sumstats/filtered/significant_window_2mb/{type}/{study_id}.parquet'
+    ld_path = '/home/ubuntu/data/genotypes/ukb_v3_downsampled10k_plink/ukb_v3_chr{chrom}.downsampled10k'
 
     # Out path patterns
-    out = "output/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
-    log = "logs/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
-    tmpdir = "tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
-    plot = "plots/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
+    out = "/home/ubuntu/results/coloc/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
+    log = "/home/ubuntu/results/coloc/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
+    tmpdir = "/home/ubuntu/results/coloc/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
+    plot = "/home/ubuntu/results/coloc/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
 
     manifest = []
     with gzip.open(in_overlap_table, 'r') as in_h:
@@ -131,14 +131,6 @@ def main():
                 out_record[colname] = os.path.abspath(out_record[colname])
 
             manifest.append(out_record)
-
-    # # Convert to a dataframe and save
-    # df = pd.DataFrame(manifest)
-    # df.to_csv(outf, sep='\t', header=None, index=None, na_rep='None')
-
-    # # Print column numbers
-    # for i, colname in enumerate(df.columns):
-    #     print(i, colname)
 
     # Write manifest file
     os.makedirs(os.path.dirname(out_manifest), exist_ok=True)

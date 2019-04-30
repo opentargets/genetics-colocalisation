@@ -264,6 +264,10 @@ def main():
     # Output results
     #
 
+    # Remove temp directory
+    if args.delete_tmpdir:
+        rmtree(args.tmpdir)
+
     # Log time taken
     logger.info('Time taken: {0}'.format(datetime.now() - start_time))
     logger.info('Finished!')
@@ -456,6 +460,9 @@ def parse_args():
     p.add_argument('--r_coloc_script',
                    help=("R script that implements coloc"),
                    type=str, required=True, metavar="<str>")
+    p.add_argument('--delete_tmpdir',
+                   help=("Remove temp dir when complete"),
+                   action='store_true')
     # Top loci input
     p.add_argument('--top_loci',
                    help=("Input: Top loci table (required for conditional analysis)"),

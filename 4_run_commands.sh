@@ -3,12 +3,11 @@
 
 set -euo pipefail
 
-cores=64
-instance_name="em-finemap-ssd"
-instance_zone="europe-west1-d"
+cores=59
+instance_name="em-finemapping-big"
 
-python 3_make_commands.py | parallel -j $cores
+python 3_make_commands.py | shuf | parallel -j $cores
 
 echo COMPLETE
 
-gcloud compute instances stop $instance_name --zone=$instance_zone
+openstack server suspend $instance_name
