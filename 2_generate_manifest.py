@@ -138,7 +138,7 @@ def main():
                 if colname == 'left_ld' or colname == 'right_ld':
                     in_path = in_path + '.bed'
                 # Assert exists
-                assert os.path.exists(out_record[colname]), \
+                assert os.path.exists(in_path), \
                     "Input file not found ({}): {}".format(colname, in_path)
 
             manifest.append(out_record)
