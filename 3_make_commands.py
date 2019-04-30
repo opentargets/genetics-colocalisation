@@ -23,7 +23,7 @@ def main():
     # Pipeline args
     script = 'scripts/coloc_wrapper.py'
     r_script = 'scripts/coloc.R'
-    top_loci_file = '/home/ubuntu/results/finemapping/results/top_loci.json.gz'
+    top_loci_file = '/home/ubuntu/results/finemapping/results/top_loci.json'
     window_colc = 500 # in KB
     window_cond = 2000  # in KB
     min_maf = 0.01
