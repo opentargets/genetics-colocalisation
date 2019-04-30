@@ -7,7 +7,6 @@
 import os
 import sys
 import glob
-import numpy as np
 
 def main():
 
