@@ -17,8 +17,8 @@ import pyspark.sql
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 import os
-from shutil import copyfile
-from glob import glob
+# from shutil import copyfile
+# from glob import glob
 
 def main():
 
@@ -39,6 +39,9 @@ def main():
 
     # Load
     df = spark.read.json(in_res_pattern)
+
+    # Repartition
+    df = df.repartitionByRange('left_chrom', 'left_pos')
 
     # Write
     (
