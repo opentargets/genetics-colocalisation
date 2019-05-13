@@ -10,7 +10,7 @@ gsutil -m rsync -r results gs://genetics-portal-staging/coloc/$version_date
 tar -zcvf logs.tar.gz logs
 gsutil -m cp logs.tar.gz gs://genetics-portal-staging/coloc/$version_date/logs.tar.gz
 
-# Tar the logs and copy over
+# Tar the plots and copy over
 tar -zcvf plots.tar.gz plots
 gsutil -m cp plots.tar.gz gs://genetics-portal-staging/coloc/$version_date/plots.tar.gz
 

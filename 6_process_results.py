@@ -19,8 +19,7 @@ from pyspark.sql.functions import *
 import sys
 import os
 import gzip
-# from shutil import copyfile
-# from glob import glob
+from glob import glob
 
 def main():
 
@@ -36,9 +35,9 @@ def main():
     # File args
     # in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
     # out_json = '/home/ubuntu/results/coloc/results/coloc_processed.json'
-    in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw_copy.parquet'
+    in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
     out_json = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.json'
-    in_phenotype_map = '/Users/em21/Projects/ot_genetics/genetics-sumstats_data/ingest/eqtl_db_v1/example_data/HumanHT-12_V4_gene_metadata.txt.gz'
+    in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'
 
     # Results parameters
     make_symmetric = True # Will make the coloc matrix symmetric
@@ -47,7 +46,7 @@ def main():
     min_overlapping_vars = 100 # Only keep results with this many overlapping vars
 
     # Load
-    df = spark.read.parquet(in_parquet)
+    df = spark.read.parquet(in_parquet) #.limit(100)
 
     # Rename and calc new columns 
     df = (
@@ -89,7 +88,7 @@ def main():
         df = df.withColumn('is_flipped', lit(False))
         df_rev = df_rev.withColumn('is_flipped', lit(True))
         df = df.unionByName(df_rev)
-    
+
     # Keep only rows where left_type == gwas
     if left_gwas_only:
         df = df.filter(col('left_type') == 'gwas')
@@ -122,13 +121,26 @@ def main():
         ]
         df = df.dropDuplicates(subset=col_subset)
 
-    # Add gene_id to phenotype_id
-    phenotype_map = load_pheno_to_gene_map(in_phenotype_map)
+    # Add gene_id using phenotype_id
+    phenotype_map = load_pheno_to_gene_map(in_phenotype_maps)
     biofeature_mapper = udf(lambda x: phenotype_map.get(x, x))
     df = (
         df.withColumn('left_gene_id', biofeature_mapper(col('left_phenotype')))
           .withColumn('right_gene_id', biofeature_mapper(col('right_phenotype')))
     )
+
+    # Set gene_id to null if it doesn't start with ENSG
+    for colname in ['left_gene_id', 'right_gene_id']:
+        df = df.withColumn(
+            colname,
+            when(col(colname).startswith('ENSG'), col(colname))
+                .otherwise(lit(None))
+        )
+    
+    # Remove unneeded columns
+    df = df.drop('left_sumstat', 'right_sumstat')
+    if left_gwas_only:
+        df = df.drop('left_gene_id', 'left_bio_feature', 'left_phenotype')
 
     # Repartition
     df = (
@@ -147,26 +159,31 @@ def main():
 
     return 0
 
-def load_pheno_to_gene_map(inf):
-    ''' Loads a dictionary, mapping phenotype_ids to ensembl gene IDs
+def load_pheno_to_gene_map(infs):
+    ''' Loads a dictionary, mapping phenotype_ids to ensembl gene IDs.
+        Input files should have 2 columns phenotype_id, gene_id
     '''
     d = {}
-    with gzip.open(inf, 'r') as in_h:
 
-        # Skip header
-        header = (
-            in_h.readline()
-                .decode()
-                .rstrip()
-                .split('\t')
-        )
+    for inf in glob(infs):
 
-        # Load each line into dict
-        for line in in_h:
-            parts = line.decode().rstrip().split('\t')
-            assert parts[header.index('gene_id')].startswith('ENSG')
-            d[parts[header.index('phenotype_id')]] = \
-                parts[header.index('gene_id')]
+        with gzip.open(inf, 'r') as in_h:
+
+            # Skip header
+            header = (
+                in_h.readline()
+                    .decode()
+                    .rstrip()
+                    .split('\t')
+            )
+
+            # Load each line into dict
+            for line in in_h:
+                parts = line.decode().rstrip().split('\t')
+                if not parts[header.index('gene_id')].startswith('ENSG'):
+                    continue
+                d[parts[header.index('phenotype_id')]] = \
+                    parts[header.index('gene_id')]
     
     return d
 
