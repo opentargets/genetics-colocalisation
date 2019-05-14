@@ -22,9 +22,10 @@ def main():
 
     # Args
     in_json = '../tmp/coloc_processed.json'
-    out_qtl = '../tmp/coloc_qtl_counts.tsv'
-    out_gwas = '../tmp/coloc_gwas_counts.tsv'
-    out_gwas_loci = '../tmp/coloc_gwas_loci_counts.tsv'
+    out_qtl = '../tmp/counts/coloc_qtl_counts.tsv'
+    out_gwas = '../tmp/counts/coloc_gwas_counts.tsv'
+    out_gwas_loci = '../tmp/counts/coloc_gwas_loci_counts.tsv'
+    out_tracks = '../tmp/counts/coloc_track_counts.tsv'
     gwas_window = 500000 # kb
 
     # Make spark session
@@ -61,23 +62,47 @@ def main():
         .coalesce(1).write.csv(out_gwas, mode='overwrite', header=True)
     )
 
+    # Make combined counts at different h4 thresholds
+    (
+        df
+        .groupby('left_study', 'left_chrom', 'left_pos',
+                 'left_ref', 'left_alt') #'right_type'
+        .agg(
+            count(when((col('coloc_h4') >= 0.99), lit(1))).alias('count_h4_99'),
+            count(when((col('coloc_h4') >= 0.95), lit(1))).alias('count_h4_95'),
+            count(when((col('coloc_h4') >= 0.90), lit(1))).alias('count_h4_90'),
+            count(when((col('coloc_h4') >= 0.80), lit(1))).alias('count_h4_80'),
+            count(when((col('coloc_h4') >= 0.70), lit(1))).alias('count_h4_70'),
+            count(when((col('coloc_h4') >= 0.60), lit(1))).alias('count_h4_60'),
+            count(when((col('coloc_h4') >= 0.50), lit(1))).alias('count_h4_50'),
+            count(when((col('coloc_h4') >= 0.40), lit(1))).alias('count_h4_40'),
+            count(when((col('coloc_h4') >= 0.30), lit(1))).alias('count_h4_30'),
+            count(when((col('coloc_h4') >= 0.20), lit(1))).alias('count_h4_20'),
+            count(when((col('coloc_h4') >= 0.10), lit(1))).alias('count_h4_10'),
+            count(when((col('coloc_h4') >= 0.05), lit(1))).alias('count_h4_05'),
+            count(when((col('coloc_h4') >= 0), lit(1))).alias('count_h4_00'),
+        )
+        .orderBy('count_h4_00', ascending=False)
+        .coalesce(1).write.csv(out_tracks, mode='overwrite', header=True)
+    )
+
     #
     # Make gwas counts based on loci ------------------------------------------
     #
 
     # Filter to keep only gwas type
-    df = df.filter(col('right_type') == 'gwas')
+    gwas_only = df.filter(col('right_type') == 'gwas')
 
     # Perfrom join
     merged = (
 
         # Create left dataset
-        df.select('left_study', 'left_chrom',
+        gwas_only.select('left_study', 'left_chrom',
                   'left_pos', 'left_ref', 'left_alt')
             .alias('left').join(
             
         # Create right dataset
-        df.select('right_study', 'right_chrom', 'right_pos',
+        gwas_only.select('right_study', 'right_chrom', 'right_pos',
                     'right_ref', 'right_alt')
             .alias('right'),
 
