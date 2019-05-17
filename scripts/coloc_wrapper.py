@@ -442,7 +442,7 @@ def parse_args():
     # Method parameteres
     p.add_argument('--method',
                    help=("Which method to run (i) conditional analysis"
-                         " or (ii) distance based with conditional"),
+                         " or (ii) distance based without conditional"),
                    type=str,
                    choices=['conditional', 'distance'],
                    required=True)
