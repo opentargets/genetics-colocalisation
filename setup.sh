@@ -12,9 +12,6 @@ bash miniconda.sh -b -p $HOME/miniconda
 echo export PATH="$HOME/miniconda/bin:\$PATH" >> ~/.profile
 . ~/.profile
 
-# Install python and pandas
-conda install --yes pandas
-
 # Install R
 sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
