@@ -81,7 +81,7 @@ optional arguments:
   --right_ld <str>      Right LD plink reference
   --method {conditional,distance}
                         Which method to run (i) conditional analysis or (ii)
-                        distance based with conditional
+                        distance based without conditional
   --window_coloc <int>  Plus/minus window (kb) to perform coloc on
   --window_cond <int>   Plus/minus window (kb) to perform conditional analysis
                         on
