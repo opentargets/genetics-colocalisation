@@ -64,6 +64,7 @@ def main():
     (
         df
         .repartitionByRange('lead_chrom', 'lead_pos')
+        .sortWithinPartitions('left_chrom', 'left_pos')
         .write.parquet(out_f,
                     mode='overwrite',
                     compression='snappy')

@@ -41,7 +41,10 @@ def main():
     df = spark.read.json(in_res_pattern)
 
     # Repartition
-    df = df.repartitionByRange('left_chrom', 'left_pos')
+    df = (
+        df.repartitionByRange('left_chrom', 'left_pos')
+        .sortWithinPartitions('left_chrom', 'left_pos')
+    )
 
     # Write
     (

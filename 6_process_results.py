@@ -97,6 +97,9 @@ def main():
     # print(df.count())
     if deduplicate_right:
 
+        # https://stackoverflow.com/a/47579932
+        sys.exit('WARNING: this is incorrect!!!')
+
         # Sort by coloc_h4
         df = df.orderBy('coloc_h4', ascending=False)
 
@@ -145,6 +148,7 @@ def main():
     # Repartition
     df = (
         df.repartitionByRange('left_chrom', 'left_pos')
+        .sortWithinPartitions('left_chrom', 'left_pos')
     )
 
     # Write
