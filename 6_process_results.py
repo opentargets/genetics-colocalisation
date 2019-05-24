@@ -12,7 +12,7 @@ export PYSPARK_SUBMIT_ARGS="--driver-memory 8g pyspark-shell"
 export SPARK_HOME=/Users/em21/software/spark-2.4.0-bin-hadoop2.7
 export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$PYTHONPATH
 '''
-
+from pyspark.sql import Window
 import pyspark.sql
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
@@ -46,7 +46,7 @@ def main():
     min_overlapping_vars = 100 # Only keep results with this many overlapping vars
 
     # Load
-    df = spark.read.parquet(in_parquet) #.limit(100)
+    df = spark.read.parquet(in_parquet).limit(100)
 
     # Rename and calc new columns 
     df = (
@@ -94,14 +94,7 @@ def main():
         df = df.filter(col('left_type') == 'gwas')
     
     # Deduplicate right
-    # print(df.count())
     if deduplicate_right:
-
-        # https://stackoverflow.com/a/47579932
-        sys.exit('WARNING: this is incorrect!!!')
-
-        # Sort by coloc_h4
-        df = df.orderBy('coloc_h4', ascending=False)
 
         # Deduplicate the right dataset
         col_subset = [
@@ -122,7 +115,14 @@ def main():
             # 'right_ref',
             # 'right_alt'
         ]
-        df = df.dropDuplicates(subset=col_subset)
+        
+        # Drop duplicates, keeping first
+        df = drop_duplicates_keep_first(
+            df,
+            subset=col_subset,
+            order_colname='coloc_h4',
+            ascending=False
+        )
 
     # Add gene_id using phenotype_id
     phenotype_map = load_pheno_to_gene_map(in_phenotype_maps)
@@ -162,6 +162,37 @@ def main():
     )
 
     return 0
+
+def drop_duplicates_keep_first(df, subset, order_colname, ascending=True):
+    ''' Implements the equivalent pd.drop_duplicates(keep='first')
+    Args:
+        df (spark df)
+        subset (list): columns to partition by
+        order_colname (str): column to sort by
+        ascending (bool): whether to sort ascending
+    Returns:
+        df
+    '''
+    assert isinstance(subset, list)
+
+    # Get order column ascending or descending
+    if ascending:
+        order_col = col(order_colname)
+    else:
+        order_col = col(order_colname).desc()
+
+    # Specfiy window spec
+    window = Window.partitionBy(*subset).orderBy(
+        order_col, 'tiebreak')
+    # Select first
+    res = (
+        df
+        .withColumn('tiebreak', monotonically_increasing_id())
+        .withColumn('rank', rank().over(window))
+        .filter(col('rank') == 1)
+        .drop('rank', 'tiebreak')
+    )
+    return res
 
 def load_pheno_to_gene_map(infs):
     ''' Loads a dictionary, mapping phenotype_ids to ensembl gene IDs.
