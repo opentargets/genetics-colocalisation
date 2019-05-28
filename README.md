@@ -6,6 +6,8 @@ Colocalisation pipeline for Open Targets Genetics. In brief:
 2. Optionally, run conditional analysis
 3. Perform colocalisation analysis using *coloc*
 
+Warning: I have not yet implemented a way to remove old results from the manifest file in order to skip them (prevent duplicating the computation), or a way to merge new and old results. This will affect steps 3 and 5 below.
+
 ### Requirements
 - R
 - Spark v2.4.0
@@ -171,6 +173,10 @@ bash 4_run_commands.sh
 ```
 
 The above command will run all analyses specified in the manifest using GNU parallel. It will create two files `commands_todo.txt.gz` and `commands_done.txt.gz` showing which analyses have not yet/already been done. The pipeline can be stopped at any time and restarted without repeating any completed analyses. You can safely regenerate the `commands_*.txt.gz` commands whilst the pipeline is running using `python 3_make_commands.py --quiet`.
+
+Warning: When I ran this for 1.7 million comparisons I ran out of inodes towards the end, causing the remaining comparisons to fail. Need to think about how to remedy this.
+
+Each comparison took on average ~70 seconds. On 60 cores, this completes in about 1 month. This pipeline will need scaling out, or optimising in the future if the scale of the data drastically increases.
 
 #### Step 5: Process the results
 

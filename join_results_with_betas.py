@@ -25,6 +25,7 @@ def main():
     # Make spark session
     spark = (
         pyspark.sql.SparkSession.builder
+        .config('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')
         .getOrCreate()
     )
     # sc = spark.sparkContext
