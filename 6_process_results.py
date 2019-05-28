@@ -3,8 +3,13 @@
 #
 # Ed Mountjoy
 #
-# Combines the outputs from the coloc pipeline into a single file
-#
+'''
+Processes results for the genetics portal. Processing includes:
+1. Make the table symmetrical again
+2. Filter to keep only left_type == gwas
+3. Only keep the top colocalising result if multiple right loci were tested
+4. Filter to remove colocs where small number of variants overlapped.
+'''
 
 '''
 # Set SPARK_HOME and PYTHONPATH to use 2.4.0
@@ -36,7 +41,7 @@ def main():
     # in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
     # out_json = '/home/ubuntu/results/coloc/results/coloc_processed.json'
     in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
-    out_json = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.json'
+    out_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.parquet'
     in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'
 
     # Results parameters
@@ -46,7 +51,7 @@ def main():
     min_overlapping_vars = 100 # Only keep results with this many overlapping vars
 
     # Load
-    df = spark.read.parquet(in_parquet).limit(100)
+    df = spark.read.parquet(in_parquet) #.limit(100)
 
     # Rename and calc new columns 
     df = (
@@ -154,9 +159,8 @@ def main():
     # Write
     (
         df
-        .write.json(
-            out_json,
-            compression='gzip',
+        .write.parquet(
+            out_parquet,
             mode='overwrite'
         )
     )
