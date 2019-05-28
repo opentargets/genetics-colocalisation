@@ -19,7 +19,6 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 import sys
 import os
-import gzip
 
 def main():
 
@@ -31,15 +30,15 @@ def main():
     # sc = spark.sparkContext
     print('Spark version: ', spark.version)
 
-    # # File args (dataproc)
-    # in_parquet = 'gs://genetics-portal-staging/coloc/190513/coloc_processed.parquet'
-    # in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
-    # out_json = 'gs://genetics-portal-staging/coloc/190513/coloc_processed_w_betas.json'
+    # File args (dataproc)
+    in_parquet = 'gs://genetics-portal-staging/coloc/190513/coloc_processed.parquet'
+    in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
+    out_json = 'gs://genetics-portal-staging/coloc/190513/coloc_processed_w_betas.json'
     
-    # File args (local)
-    in_parquet = 'tmp/coloc_processed.parquet'
-    in_sumstats = 'tmp/example_sumstats/part-00000-c341cf99-67f3-479a-a124-62685dde09ec-c000.snappy.parquet'
-    out_json = 'tmp/coloc_processed_w_betas.json'
+    # # File args (local)
+    # in_parquet = 'tmp/coloc_processed.parquet'
+    # in_sumstats = 'tmp/example_sumstats/part-00000-c341cf99-67f3-479a-a124-62685dde09ec-c000.snappy.parquet'
+    # out_json = 'tmp/coloc_processed_w_betas.json'
 
     # Load coloc
     coloc = spark.read.parquet(in_parquet)
@@ -65,7 +64,7 @@ def main():
     )
 
     # Join using nullSafe for phenotype and bio_feature
-    print('WARNING: this must be a left join in the final implementation')
+    # print('WARNING: this must be a left join in the final implementation')
     join_expression = (
         # Variants
         (col('coloc.left_chrom') == col('sumstats.chrom')) &
@@ -81,7 +80,7 @@ def main():
         coloc.alias('coloc').join(
             sumstats_join.alias('sumstats'),
             on=join_expression,
-            how='inner'
+            how='left'
         )
     )
 
@@ -108,65 +107,6 @@ def main():
     )
 
     return 0
-
-def drop_duplicates_keep_first(df, subset, order_colname, ascending=True):
-    ''' Implements the equivalent pd.drop_duplicates(keep='first')
-    Args:
-        df (spark df)
-        subset (list): columns to partition by
-        order_colname (str): column to sort by
-        ascending (bool): whether to sort ascending
-    Returns:
-        df
-    '''
-    assert isinstance(subset, list)
-
-    # Get order column ascending or descending
-    if ascending:
-        order_col = col(order_colname)
-    else:
-        order_col = col(order_colname).desc()
-
-    # Specfiy window spec
-    window = Window.partitionBy(*subset).orderBy(
-        order_col, 'tiebreak')
-    # Select first
-    res = (
-        df
-        .withColumn('tiebreak', monotonically_increasing_id())
-        .withColumn('rank', rank().over(window))
-        .filter(col('rank') == 1)
-        .drop('rank', 'tiebreak')
-    )
-    return res
-
-def load_pheno_to_gene_map(infs):
-    ''' Loads a dictionary, mapping phenotype_ids to ensembl gene IDs.
-        Input files should have 2 columns phenotype_id, gene_id
-    '''
-    d = {}
-
-    for inf in glob(infs):
-
-        with gzip.open(inf, 'r') as in_h:
-
-            # Skip header
-            header = (
-                in_h.readline()
-                    .decode()
-                    .rstrip()
-                    .split('\t')
-            )
-
-            # Load each line into dict
-            for line in in_h:
-                parts = line.decode().rstrip().split('\t')
-                if not parts[header.index('gene_id')].startswith('ENSG'):
-                    continue
-                d[parts[header.index('phenotype_id')]] = \
-                    parts[header.index('gene_id')]
-    
-    return d
 
 if __name__ == '__main__':
 

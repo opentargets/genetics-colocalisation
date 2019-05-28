@@ -186,6 +186,47 @@ python 6_process_results.py
 bash 7_copy_results_to_gcs.sh
 ```
 
+#### Step 6: Join the summary stats onto the coloc table
+
+This step was added at a later date to join the summary stats onto the coloc results table. This is done in the pipeline rather than in the database as the sumstat database lives on a different machine from the coloc table.
+
+This step requires the summary stats to be concatenated into a single parquet dataset and partitioned by chrom, pos. Script to do this is available [here](https://github.com/opentargets/genetics-sumstat-data/blob/master/filters/significant_window_extraction/union_and_repartition_into_single_dataset.py).
+
+To run on google dataproc:
+
+```
+# Open join_results_with_betas.py and specify file arguments
+
+# Start a dataproc cluster
+gcloud beta dataproc clusters create \
+    em-coloc-beta-join \
+    --image-version=preview \
+    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.executor.cores=16,spark:spark.executor.instances=1 \
+    --master-machine-type=n1-highmem-16 \
+    --master-boot-disk-size=1TB \
+    --num-master-local-ssds=1 \
+    --zone=europe-west1-d \
+    --initialization-action-timeout=20m \
+    --single-node \
+    --max-idle=10m
+
+# Submit to dataproc
+gcloud dataproc jobs submit pyspark \
+    --cluster=em-coloc-beta-join \
+    join_results_with_betas.py
+
+# To monitor job
+gcloud compute ssh em-coloc-beta-join \
+  --project=open-targets-genetics \
+  --zone=europe-west1-d -- -D 1080 -N
+
+"EdApplications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --proxy-server="socks5://localhost:1080" \
+  --user-data-dir="/tmp/em-coloc-beta-join" http://em-coloc-beta-join:8088
+
+# Cluster will automatically shutdown after 10 minutes idle
+```
+
 ### Other
 
 ##### Useful commands
