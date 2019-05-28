@@ -201,8 +201,8 @@ To run on google dataproc:
 gcloud beta dataproc clusters create \
     em-coloc-beta-join \
     --image-version=preview \
-    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.executor.cores=16,spark:spark.executor.instances=1 \
-    --master-machine-type=n1-highmem-16 \
+    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.executor.cores=64,spark:spark.executor.instances=1 \
+    --master-machine-type=n1-highmem-64 \
     --master-boot-disk-size=1TB \
     --num-master-local-ssds=1 \
     --zone=europe-west1-d \
@@ -216,13 +216,13 @@ gcloud dataproc jobs submit pyspark \
     join_results_with_betas.py
 
 # To monitor job
-gcloud compute ssh em-coloc-beta-join \
+gcloud compute ssh em-coloc-beta-join-m \
   --project=open-targets-genetics \
   --zone=europe-west1-d -- -D 1080 -N
 
 "EdApplications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --proxy-server="socks5://localhost:1080" \
-  --user-data-dir="/tmp/em-coloc-beta-join" http://em-coloc-beta-join:8088
+  --user-data-dir="/tmp/em-coloc-beta-join-m" http://em-coloc-beta-join-m:8088
 
 # Cluster will automatically shutdown after 10 minutes idle
 ```
