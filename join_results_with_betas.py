@@ -34,7 +34,7 @@ def main():
     # File args (dataproc)
     in_parquet = 'gs://genetics-portal-staging/coloc/190513/coloc_processed.parquet'
     in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
-    out_json = 'gs://genetics-portal-staging/coloc/190513/coloc_processed_w_betas.json'
+    out_parquet = 'gs://genetics-portal-staging/coloc/190513/coloc_processed_w_betas.parquet'
     
     # # File args (local)
     # in_parquet = 'tmp/coloc_processed.parquet'
@@ -100,9 +100,8 @@ def main():
     # Write
     (
         merged
-        .write.json(
-            out_json,
-            compression='gzip',
+        .write.parquet(
+            out_parquet,
             mode='overwrite'
         )
     )
