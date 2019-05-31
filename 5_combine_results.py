@@ -29,6 +29,7 @@ def main():
         .config("spark.sql.files.ignoreCorruptFiles", "true")
         .config("spark.master", "local[*]")
         .config("spark.driver.maxResultSize", "0")
+        .config("spark.executor.memory", "2g")
         .getOrCreate()
     )
     print('Spark version: ', spark.version)
@@ -42,10 +43,13 @@ def main():
     df = spark.read.json(in_res_pattern)
 
     # Repartition
-    df = (
-        df.repartitionByRange('left_chrom', 'left_pos')
-        .sortWithinPartitions('left_chrom', 'left_pos')
-    )
+    # df = (
+    #     df.repartitionByRange('left_chrom', 'left_pos')
+    #     .sortWithinPartitions('left_chrom', 'left_pos')
+    # )
+
+    # Coalesce
+    df = df.coalesce(2000)
 
     # Write
     (
