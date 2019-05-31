@@ -28,6 +28,7 @@ def main():
         pyspark.sql.SparkSession.builder
         .config("spark.sql.files.ignoreCorruptFiles", "true")
         .config("spark.master", "local[*]")
+        .config("spark.driver.maxResultSize", "0")
         .getOrCreate()
     )
     print('Spark version: ', spark.version)

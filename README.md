@@ -183,6 +183,7 @@ Each comparison took on average ~70 seconds. On 60 cores, this completes in abou
 ```
 # Combine the results of all the individual analyses
 # This step can be slow/inefficient due to Hadoop many small files problem
+export PYSPARK_SUBMIT_ARGS="--driver-memory 80g pyspark-shell"
 python 5_combine_results.py
 
 # Process the results for exporting
