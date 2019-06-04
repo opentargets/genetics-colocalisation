@@ -26,21 +26,21 @@ def main():
     spark = (
         pyspark.sql.SparkSession.builder
         .config('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')
-        .config("spark.master", "local[*]") # Don't use with dataproc!
+        # .config("spark.master", "local[*]") # Don't use with dataproc!
         .getOrCreate()
     )
     # sc = spark.sparkContext
     print('Spark version: ', spark.version)
 
-    # # File args (dataproc)
-    # in_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet'
-    # in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
-    # out_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed_w_betas.parquet'
+    # File args (dataproc)
+    in_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet'
+    in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
+    out_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed_w_betas.parquet'
     
-    # File args (local)
-    in_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
-    in_sumstats = '/home/ubuntu/data/sumstats/filtered/significant_window_2mb/union'
-    out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed_w_betas.parquet'
+    # # File args (local)
+    # in_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
+    # in_sumstats = '/home/ubuntu/data/sumstats/filtered/significant_window_2mb/union'
+    # out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed_w_betas.parquet'
 
     # Load coloc
     coloc = spark.read.parquet(in_parquet)

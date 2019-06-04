@@ -208,8 +208,8 @@ To run on google dataproc:
 gcloud beta dataproc clusters create \
     em-coloc-beta-join \
     --image-version=preview \
-    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.executor.cores=64,spark:spark.executor.instances=1 \
-    --master-machine-type=n1-highmem-64 \
+    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.executor.cores=15,spark:spark.executor.instances=1 \
+    --master-machine-type=n1-standard-16 \
     --master-boot-disk-size=1TB \
     --num-master-local-ssds=1 \
     --zone=europe-west1-d \
