@@ -150,6 +150,12 @@ def main():
     if left_gwas_only:
         df = df.drop('left_gene_id', 'left_bio_feature', 'left_phenotype')
 
+    # Remove rows that have null in coloc stat columns
+    df = df.dropna(
+        subset=['coloc_h3', 'coloc_h4', 'coloc_log2_h4_h3'],
+        how='any'
+    )
+
     # Repartition
     df = (
         df.repartitionByRange('left_chrom', 'left_pos')
