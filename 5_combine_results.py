@@ -14,11 +14,9 @@ export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$
 '''
 
 import pyspark.sql
-from pyspark.sql.types import *
 from pyspark.sql.functions import *
-import os
-# from shutil import copyfile
-# from glob import glob
+from pyspark.sql.types import *
+
 
 def main():
 

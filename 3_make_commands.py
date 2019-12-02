@@ -6,12 +6,11 @@
 # Reads the manifest file and makes commands
 #
 
-import os
-import sys
-import json
 import argparse
 import gzip
-import yaml
+import json
+import os
+
 
 def main():
 

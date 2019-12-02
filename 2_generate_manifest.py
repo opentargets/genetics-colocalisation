@@ -4,14 +4,12 @@
 # Ed Mountjoy
 #
 
-import os
-import sys
-# import pandas as pd
-from pprint import pprint
-from glob import glob
-import json
-from collections import OrderedDict
 import gzip
+import json
+import os
+from collections import OrderedDict
+from glob import glob
+
 import yaml
 
 
