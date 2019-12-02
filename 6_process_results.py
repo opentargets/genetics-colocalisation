@@ -38,11 +38,11 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args
-    in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
-    out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
+    in_parquet = '/data/coloc_raw.parquet'
+    out_parquet = '/data/coloc_processed.parquet'
     # in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
     # out_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.parquet'
-    in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'
+    in_phenotype_maps = '/coloc/configs/phenotype_id_gene_luts/*.tsv.gz'
 
     # Results parameters
     make_symmetric = True # Will make the coloc matrix symmetric
