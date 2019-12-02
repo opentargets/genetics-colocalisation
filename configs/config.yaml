@@ -1,0 +1,4 @@
+# input
+credset: '/data/credset/'
+sumstats: '/data/significant_window_2mb/'
+ld_reference: '/data/ukb_dav3_downsampled10k_plink/'
