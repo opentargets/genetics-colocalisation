@@ -24,10 +24,6 @@ def main():
     overlap_prop_threshold = 0.01
     max_credset_threshold = None
 
-    # # In path patterns (local)
-    # sumstats = '../genetics-finemapping/example_data/sumstats/{type}_2/{study_id}.parquet'
-    # ld_path = '/Users/em21/Projects/reference_data/uk10k_2019Feb/3_liftover_to_GRCh38/output/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
-    
     # In path patterns (server)
     sumstats = os.path.join(config['sumstats'], '{type}/{study_id}.parquet')
     ld_path = os.path.join(config['ld_reference'], 'ukb_v3_chr{chrom}.downsampled10k')
