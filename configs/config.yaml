@@ -1,4 +1,5 @@
 # input
 credset: '/data/credset/'
 sumstats: '/data/significant_window_2mb/'
-ld_reference: '/data/ukb_dav3_downsampled10k_plink/'
+ld_reference: '/data/ukb_v3_downsampled10k_plink/'
+custom_studies: '/data/studies/custom_studies.parquet'
