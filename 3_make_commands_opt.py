@@ -8,6 +8,7 @@ import argparse
 import gzip
 import json
 import os
+import sys
 
 
 def main():
@@ -32,13 +33,12 @@ def main():
 
             # Parse
             rec = json.loads(line.decode().rstrip())
-            # pprint(rec)
 
-            if 'left_reduced_sumstats' in rec:
+            if not 'left_reduced_sumstats' in rec:
                print("Skipping a command as the follwing record missing left_reduced_sumstats:" + str(rec), file=sys.stderr) 
                continue
 
-            if 'right_reduced_sumstats' in rec:
+            if not 'right_reduced_sumstats' in rec:
                print("Skipping a command as the follwing record missing right_reduced_sumstats:" + str(rec), file=sys.stderr) 
                continue
 
