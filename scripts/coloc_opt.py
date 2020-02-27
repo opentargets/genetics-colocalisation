@@ -69,9 +69,6 @@ def main(args):
     else:
         logger.error('Cannot run coloc with no intersection')
 
-        # Touch empty results file
-        touch(args.out)
-
     # --------------------------------------------------------------------------
     # Make plot if requested
     #
@@ -163,10 +160,6 @@ def read_args(path):
     args_json = os.path.join(path, 'args.json')
     with open(args_json, 'r') as f:
         return json.load(f)
-
-def touch(fname, times=None):
-    with open(fname, 'a'):
-        os.utime(fname, times)
 
 
 def parse_args():
