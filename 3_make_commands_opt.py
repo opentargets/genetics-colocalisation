@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Ed Mountjoy
-#
-# Reads the manifest file and makes commands
+# Reads the manifest file and makes commands (optimised version)
 #
 
 import argparse
