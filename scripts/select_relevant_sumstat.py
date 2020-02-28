@@ -5,10 +5,8 @@
 import pandas as pd
 import logging
 import argparse
-import pprint
 import sys
 import os
-import json
 
 import utils as coloc_utils
 import gcta as coloc_gcta
@@ -208,14 +206,6 @@ def parse_args_or_fail():
     return args
 
 
-def save_args(path, args):
-    args_json = os.path.join(path, 'args.json')
-    args_dict = vars(args)
-    logger.info('Saving following args to ' + args_json + ': \n' + pprint.pformat(args_dict, indent=2))
-    with open(args_json, 'w') as f:
-        json.dump(args_dict, f)
-
-
 if __name__ == '__main__':
     args = parse_args_or_fail()
     ofp = output_file_path(args)
@@ -224,5 +214,4 @@ if __name__ == '__main__':
         sys.exit(1)
     logger.debug('Making sure {} folder exist.'.format(args.out))
     os.makedirs(args.out, exist_ok=True)
-    save_args(args.out, args)
     main(args)

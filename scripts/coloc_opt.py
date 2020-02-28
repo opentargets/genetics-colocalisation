@@ -51,13 +51,6 @@ def main(args):
 
         res = run_coloc(sumstat_int_left, sumstat_int_right, args.tmpdir, logger)
 
-        # Add left_ and right_ columns to result file
-        for key, val in read_relevant_args(args.left_sumstat).items():
-            res['left_' + key] = val
-
-        for key, val in read_relevant_args(args.right_sumstat).items():
-            res['right_' + key] = val
-
         logger.info(' H4={:.3f} and H3={:.3f}'.format(
             res['PP.H4.abf'], res['PP.H3.abf']))
 
@@ -149,17 +142,6 @@ def run_coloc(left_ss, right_ss, tmp_dir, logger):
     res_dict['nsnps'] = int(res_dict['nsnps'])
 
     return res_dict
-
-def read_relevant_args(path):
-    args = read_args(path)
-    relevant_keys = {'type', 'sumstat', 'study', 'phenotype', 'bio_feature',
-                       'chrom', 'pos', 'ref', 'alt'}
-    return {key: val for key, val in args.items() if key in relevant_keys}
-
-def read_args(path):
-    args_json = os.path.join(path, 'args.json')
-    with open(args_json, 'r') as f:
-        return json.load(f)
 
 
 def parse_args():

@@ -32,10 +32,16 @@ def main():
 
 
     # Out path patterns
-    out = "/data/output/data/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
-    log = "/data/output/logs/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
-    tmpdir = "/data/output/tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
-    plot = "/data/output/plot/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
+    data_out = '/data/output'
+    # id column names to overlap table columns mapping
+    id_cols_mapping = {'study': 'study_id', 'type': 'type', 'phenotype': 'phenotype_id', 'bio_feature': 'bio_feature',
+                   'chrom': 'lead_chrom', 'pos': 'lead_pos', 'ref': 'lead_ref', 'alt': 'lead_alt'}
+    def construct_left_right_hive_partition_dirs(rec):
+        dirs = []
+        for side in ['left', 'right']:
+            for col, ocol in id_cols_mapping.items():
+                dirs.append(side + '_' + col + '=' + str(rec.get(side + '_' + ocol, None)))
+        return os.path.join(*dirs)
 
     manifest = []
     with gzip.open(in_overlap_table, 'r') as in_h:
@@ -73,64 +79,17 @@ def main():
                 out_record['{}_ld'.format(side)] = ld_path.format(
                     chrom=in_record['{}_lead_chrom'.format(side)])
 
-                # Add study identifiers
-                identifiers = ['study_id', 'type', 'phenotype_id', 'bio_feature', 'lead_chrom',
-                               'lead_pos', 'lead_ref', 'lead_alt']
-                for i in identifiers:
+                for i in id_cols_mapping.values():
                     out_record['{}_{}'.format(side, i)] = in_record.get('{}_{}'.format(side, i), None)
 
             # Add method (always conditional for now)
             out_record['method'] = 'conditional'
 
-            # Add output files
-            left_variant = '_'.join(
-                [str(in_record['left_lead_{}'.format(part)])
-                    for part in ['chrom', 'pos', 'ref', 'alt']]
-            )
-            right_variant = '_'.join(
-                [str(in_record['right_lead_{}'.format(part)])
-                    for part in ['chrom', 'pos', 'ref', 'alt']]
-            )
-            out_record['out'] = out.format(
-                left_study=in_record['left_study_id'],
-                left_phenotype=in_record.get('left_phenotype_id', None),
-                left_bio_feature=in_record.get('left_bio_feature', None),
-                left_variant=left_variant,
-                right_study=in_record['right_study_id'],
-                right_phenotype=in_record.get('right_phenotype_id', None),
-                right_bio_feature=in_record.get('right_bio_feature', None),
-                right_variant=right_variant
-            )
-            out_record['log'] = log.format(
-                left_study=in_record['left_study_id'],
-                left_phenotype=in_record.get('left_phenotype_id', None),
-                left_bio_feature=in_record.get('left_bio_feature', None),
-                left_variant=left_variant,
-                right_study=in_record['right_study_id'],
-                right_phenotype=in_record.get('right_phenotype_id', None),
-                right_bio_feature=in_record.get('right_bio_feature', None),
-                right_variant=right_variant
-            )
-            out_record['tmpdir'] = tmpdir.format(
-                left_study=in_record['left_study_id'],
-                left_phenotype=in_record.get('left_phenotype_id', None),
-                left_bio_feature=in_record.get('left_bio_feature', None),
-                left_variant=left_variant,
-                right_study=in_record['right_study_id'],
-                right_phenotype=in_record.get('right_phenotype_id', None),
-                right_bio_feature=in_record.get('right_bio_feature', None),
-                right_variant=right_variant
-            )
-            out_record['plot'] = plot.format(
-                left_study=in_record['left_study_id'],
-                left_phenotype=in_record.get('left_phenotype_id', None),
-                left_bio_feature=in_record.get('left_bio_feature', None),
-                left_variant=left_variant,
-                right_study=in_record['right_study_id'],
-                right_phenotype=in_record.get('right_phenotype_id', None),
-                right_bio_feature=in_record.get('right_bio_feature', None),
-                right_variant=right_variant
-            )
+            left_right_hive_partition_dirs = construct_left_right_hive_partition_dirs(in_record)
+            out_record['out'] = os.path.join(data_out, 'data', left_right_hive_partition_dirs, 'coloc_res.json.gz')
+            out_record['log'] = os.path.join(data_out, 'logs', left_right_hive_partition_dirs, 'log_file.txt')
+            out_record['tmpdir'] = os.path.join(data_out, 'tmp', left_right_hive_partition_dirs)
+            out_record['plot'] = os.path.join(data_out, 'plot', left_right_hive_partition_dirs, 'plot.png')
 
             # Make all paths absolute
             for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld',

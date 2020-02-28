@@ -37,11 +37,11 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_pattern = '/data/output/data/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
+    in_res_dir = '/data/output/data/'
     out_coloc = '/data/coloc_raw.parquet'
 
     # Load
-    df = spark.read.json(in_res_pattern)
+    df = spark.read.option('basePath', in_res_dir).json(in_res_dir)
 
     # Repartition
     # df = (
