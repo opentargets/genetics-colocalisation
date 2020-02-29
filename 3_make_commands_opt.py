@@ -43,16 +43,18 @@ def main():
                continue
 
             # Build command
+            log = os.path.abspath(rec['log'])
+            os.makedirs(os.path.dirname(log), exist_ok=True)
             cmd = [
                 'python',
                 os.path.abspath(script),
                 '--left_sumstat', os.path.abspath(rec['left_reduced_sumstats']),
                 '--right_sumstat', os.path.abspath(rec['right_reduced_sumstats']),
                 '--out', os.path.abspath(rec['out']),
-                '--log', os.path.abspath(rec['log']),
                 '--tmpdir', os.path.abspath(rec['tmpdir']),
-                '--delete_tmpdir'
-            ]
+                '--delete_tmpdir',
+                '>>', log, '2>&1'
+                ]
 
             if make_plots:
                 cmd = cmd + ['--plot', os.path.abspath(rec['plot'])]

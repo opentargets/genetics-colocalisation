@@ -25,7 +25,6 @@ def main(args):
 
     # Make output and temp directories
     os.makedirs(os.path.split(args.out)[0], exist_ok=True)
-    os.makedirs(os.path.split(args.log)[0], exist_ok=True)
     os.makedirs(args.tmpdir , exist_ok=True)
 
     sumstat_wind_left = pd.read_csv(os.path.join(args.left_sumstat, 'sumstat.tsv.gz'), sep='\t', index_col='variant_id', compression='gzip')
@@ -49,7 +48,7 @@ def main(args):
 
         logger.info('Running colocalisation')
 
-        res = run_coloc(sumstat_int_left, sumstat_int_right, args.tmpdir, logger)
+        res = run_coloc(sumstat_int_left, sumstat_int_right, args.tmpdir)
 
         logger.info(' H4={:.3f} and H3={:.3f}'.format(
             res['PP.H4.abf'], res['PP.H3.abf']))
@@ -102,7 +101,7 @@ def main(args):
 
     return 0
 
-def run_coloc(left_ss, right_ss, tmp_dir, logger):
+def run_coloc(left_ss, right_ss, tmp_dir):
     ''' Runs R coloc script and read the results
     Args:
         left_path (str)
@@ -174,11 +173,6 @@ def parse_args():
                    help=("Output: Plot of colocalisation"),
                    type=str,
                    required=False)
-    p.add_argument('--log',
-                   metavar="<file>",
-                   help=("Output: log file"),
-                   type=str,
-                   required=True)
     p.add_argument('--tmpdir',
                    metavar="<file>",
                    help=("Output: temp dir"),
