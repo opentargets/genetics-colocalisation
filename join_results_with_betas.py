@@ -42,7 +42,7 @@ def main():
 
     # Select studies
     coloc_df = coloc.toPandas()
-    for index, row in coloc_df.itterrows():
+    for index, row in coloc_df.iterrows():
         sumstats_type = row.right_type
         study = row.right_study
         sumstats_file = os.path.join(in_sumstats, sumstats_type, study + '.parquet')
