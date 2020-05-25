@@ -17,6 +17,8 @@ export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$
 import pyspark.sql
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
+import pandas as pd
+
 import os
 
 
@@ -37,17 +39,21 @@ def main():
     in_sumstats = '/data/significant_window_2mb'
     out_parquet = '/data/coloc_processed_w_betas.parquet'
 
-    # Load coloc
-    coloc = spark.read.parquet(in_parquet)
-
     # Select studies
-    coloc_df = coloc.toPandas()
-    for index, row in coloc_df.iterrows():
-        sumstats_type = row.right_type
-        study = row.right_study
-        sumstats_file = os.path.join(in_sumstats, sumstats_type, study + '.parquet')
+    coloc_df = pd.read_parquet(in_parquet)
+    grouped_df = coloc_df.groupby('right_study')
+    for name, group in coloc_df.iterrows():
+        print('Working on study: {}'.format(name))
+
+        sumstats_type = group.right_type.values[0]
+        if 'qtl' in sumstats_type:
+            sumstats_type = 'molecular_trait'
+
+        # Load coloc
+        coloc = spark.createDataFrame(group)
 
         # Load sumstats
+        sumstats_file = os.path.join(in_sumstats, sumstats_type, name + '.parquet')
         sumstats = spark.read.parquet(sumstats_file)
         # sumstats.printSchema()
 
