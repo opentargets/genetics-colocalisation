@@ -17,7 +17,6 @@ export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$
 import pyspark.sql
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
-import pandas as pd
 
 import os
 
@@ -40,9 +39,10 @@ def main():
     out_parquet = '/data/coloc_processed_w_betas.parquet'
 
     # Select studies
-    coloc_df = pd.read_parquet(in_parquet)
+    coloc_spark = spark.read.parquet(in_parquet)
+    coloc_df = coloc_spark.toPandas()
     grouped_df = coloc_df.groupby('right_study')
-    for name, group in coloc_df.iterrows():
+    for name, group in grouped_df:
         print('Working on study: {}'.format(name))
 
         sumstats_type = group.right_type.values[0]
