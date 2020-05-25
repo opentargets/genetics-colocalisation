@@ -50,7 +50,7 @@ def main():
             sumstats_type = 'molecular_trait'
 
         # Load coloc
-        coloc = spark.createDataFrame(group)
+        coloc = spark.createDataFrame(group, schema=coloc_spark.schema)
 
         # Load sumstats
         sumstats_file = os.path.join(in_sumstats, sumstats_type, name + '.parquet')
@@ -110,7 +110,7 @@ def main():
             merged
             .write.parquet(
                 out_parquet,
-                mode='overwrite'
+                mode='append'
             )
         )
 
