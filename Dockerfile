@@ -1,6 +1,13 @@
 FROM r-base:3.6.1
 
 ENV credset_dir='/data/credset'
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install OpenJDK-8
+RUN apt-get update && \
+    apt-get remove -y -o APT::Immediate-Configure=0 libgcc1 && \
+    apt-get install -y ant && \
+    apt-get clean;
 
 # Conda and the envirounment dependencies
 RUN mkdir /conda
@@ -10,12 +17,6 @@ ENV PATH="/conda/miniconda/bin:${PATH}"
 COPY ./environment.yaml /coloc/
 WORKDIR /coloc
 RUN conda env create -n coloc --file environment.yaml
-
-# Install OpenJDK-8
-RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk && \
-    apt-get install -y ant && \
-    apt-get clean;
 
 # Fix certificate issues
 RUN apt-get update && \

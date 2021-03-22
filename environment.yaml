@@ -1,5 +1,6 @@
 channels:
 - conda-forge
+- bioconda
 dependencies:
 - python=3.7.3
 - pandas
@@ -11,3 +12,4 @@ dependencies:
 - seaborn
 - pyspark
 - pyyaml
+- java-jdk=8
