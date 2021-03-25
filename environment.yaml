@@ -1,5 +1,6 @@
 channels:
 - conda-forge
+- bioconda
 dependencies:
 - python=3
 - pandas
@@ -10,3 +11,5 @@ dependencies:
 - matplotlib
 - seaborn
 - pyspark
+- r-coloc
+- r-tidyverse
