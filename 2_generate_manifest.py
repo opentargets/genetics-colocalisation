@@ -16,7 +16,7 @@ import gzip
 def main():
 
     # Parse args
-    in_overlap_table = glob('/home/ubuntu/results/coloc/overlap_table/*.json.gz')[0]
+    in_overlap_table = glob('results/coloc/overlap_table/*.json.gz')[0]
     out_manifest = 'configs/manifest.json.gz'
     overlap_prop_threshold = 0.01
     max_credset_threshold = None
@@ -26,14 +26,14 @@ def main():
     # ld_path = '/Users/em21/Projects/reference_data/uk10k_2019Feb/3_liftover_to_GRCh38/output/{chrom}.ALSPAC_TWINSUK.maf01.beagle.csq.shapeit.20131101'
     
     # In path patterns (server)
-    sumstats = '/home/ubuntu/data/sumstats/filtered/significant_window_2mb/{type}/{study_id}.parquet'
-    ld_path = '/home/ubuntu/data/genotypes/ukb_v3_downsampled10k_plink/ukb_v3_chr{chrom}.downsampled10k'
+    sumstats = 'data/filtered/significant_window_2mb/{type}/{study_id}.parquet'
+    ld_path = 'data/ukb_v3_downsampled10k/ukb_v3_chr{chrom}.downsampled10k'
 
     # Out path patterns
-    out = "/home/ubuntu/results/coloc/output/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
-    log = "/home/ubuntu/results/coloc/logs/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
-    tmpdir = "/home/ubuntu/results/coloc/tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
-    plot = "/home/ubuntu/results/coloc/plot/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
+    out = "results/coloc/output/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/coloc_res.json.gz"
+    log = "results/coloc/logs/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/log_file.txt"
+    tmpdir = "results/coloc/tmp/left_study={left_study}/left_phenotype={left_phenotype}/left_bio_feature={left_bio_feature}/left_variant={left_variant}/right_study={right_study}/right_phenotype={right_phenotype}/right_bio_feature={right_bio_feature}/right_variant={right_variant}/"
+    plot = "results/coloc/plot/{left_study}_{left_phenotype}_{left_bio_feature}_{left_variant}_{right_study}_{right_phenotype}_{right_bio_feature}_{right_variant}.png"
 
     manifest = []
     with gzip.open(in_overlap_table, 'r') as in_h:

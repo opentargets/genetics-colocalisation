@@ -38,8 +38,8 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args
-    in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
-    out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
+    in_parquet = '/home/js29/genetics-colocalisation/results/coloc/results/coloc_raw.parquet'
+    out_parquet = '/home/js29/genetics-colocalisation/results/coloc/results/coloc_processed.parquet'
     # in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
     # out_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.parquet'
     in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'

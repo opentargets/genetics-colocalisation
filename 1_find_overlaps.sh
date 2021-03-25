@@ -4,8 +4,8 @@
 set -euo pipefail
 
 # Args
-in_credset=/home/ubuntu/results/finemapping/results/credset
-outf=/home/ubuntu/results/coloc/overlap_table
+in_credset=$HOME/genetics-colocalisation/data/finemapping/credset
+outf=$HOME/genetics-colocalisation/results/coloc/overlap_table
 
 mkdir -p configs
 

@@ -39,9 +39,9 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_pattern = '/home/ubuntu/results/coloc/output/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
-    # in_res_pattern = '/home/ubuntu/results/coloc/output/left_study=GCST*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=AL*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
-    out_coloc = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
+    in_res_pattern = '/home/js29/genetics-colocalisation/results/coloc/output/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
+    # in_res_pattern = '/home/js29/genetics-colocalisation/results/coloc/output/left_study=GCST*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=AL*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
+    out_coloc = '/home/js29/genetics-colocalisation/results/coloc/results/coloc_raw.parquet'
 
     # Load
     df = spark.read.json(in_res_pattern)

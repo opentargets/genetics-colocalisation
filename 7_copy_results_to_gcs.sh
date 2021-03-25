@@ -4,7 +4,7 @@
 version_date=`date +%y%m%d`
 
 # Copy results
-gsutil -m rsync -r /home/ubuntu/results/coloc/results gs://genetics-portal-staging/coloc/$version_date
+gsutil -m rsync -r /home/js29/genetics-colocalisation/results/coloc/results gs://genetics-portal-staging/coloc/$version_date
 
 # Copy overlap table
 gsutil -m rsync /home/ubuntu/results/coloc/overlap_table gs://genetics-portal-staging/coloc/$version_date/overlap_table
