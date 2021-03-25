@@ -15,7 +15,7 @@ def main():
 
     # Args
     args = parse_args()
-    in_manifest = '/configs/manifest.json.gz'
+    in_manifest = '/configs/coloc_manifest.json.gz'
     out_todo = '/configs/commands_todo.txt.gz'
     out_done = '/configs/commands_done.txt.gz'
 
@@ -81,7 +81,6 @@ def parse_args():
     '''
     p = argparse.ArgumentParser()
 
-    # Add input files
     p.add_argument('--quiet',
                    help=("Don't print commands to stdout"),
                    action='store_true')
