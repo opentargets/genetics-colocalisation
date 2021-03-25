@@ -19,16 +19,10 @@ Warning: I have not yet implemented a way to remove old results from the manifes
 
 #### Local
 ```
-git clone https://github.com/opentargets/colocalisation.git
-cd colocalisation
+git clone https://github.com/opentargets/genetics-colocalisation.git
+cd genetics-colocalisation
 bash setup.sh
 conda env create -n coloc --file environment.yaml
-
-# Open R and install coloc and tidyverse packages
-source("https://bioconductor.org/biocLite.R")
-biocLite("snpStats")
-install.packages('coloc')
-install.packages("tidyverse")
 ```
 
 #### Docker
@@ -128,22 +122,29 @@ optional arguments:
 Requires the [same input data as the fine-mapping pipeline](https://github.com/opentargets/genetics-finemapping#step-1-prepare-input-data).
 
 Additionally, it takes the `toploci` and `credibleset` outputs from the finemapping pipeline.
+To avoid re-running coloc tests that were computed previously, it takes the "raw" coloc output file from previous runs.
 ```
-cd ~/genetics-colocalisation
-mkdir -p data/ukb_v3_downsampled10k
-gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $HOME/genetics-colocalisation/data/ukb_v3_downsampled10k/
+DATADIR=$HOME/data # for Docker pipeline
+DATADIR=$HOME/genetics-colocalisation/data # for original pipeline
 
-mkdir -p $HOME/genetics-colocalisation/data/filtered/significant_window_2mb/gwas
-gsutil -m rsync -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas_new/ $HOME/genetics-colocalisation/data/filtered/significant_window_2mb/gwas/
+mkdir -p $DATADIR/ukb_v3_downsampled10k
+gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $DATADIR/ukb_v3_downsampled10k/
+
+mkdir -p $DATADIR/filtered/significant_window_2mb/gwas
+gsutil -m rsync -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas_new/ $DATADIR/filtered/significant_window_2mb/gwas/
 # Note, may need to delete files named "_SUCCESS" from within all parquet folders,
 # since the dask dataframe seems to choke on this when reading the parquet.
 
-mkdir -p $HOME/genetics-colocalisation/data/finemapping
-gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210309/credset $HOME/genetics-colocalisation/data/finemapping/
-gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210309/top_loci.json.gz $HOME/data/finemapping/
+mkdir -p $DATADIR/finemapping
+gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210309/credset $DATADIR/finemapping/
+gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210309/top_loci.json.gz $DATADIR/finemapping/
+
+# The previous coloc file is used to avoid repeating coloc tests that were already done.
+# The "raw" file is best for this, since the "processed" one could have had some tests removed already.
+# But either would work.
+gsutil -m cp -r gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet $DATADIR/
 
 python partition_top_loci_by_chrom.py
-
 ```
 
 #### Step 2: Prepare environment
@@ -200,6 +201,9 @@ bash 1_find_overlaps.sh
 
 # Generate the manifest from the overlap table
 python 2_generate_manifest.py
+
+# Remove lines which are already in output from previous coloc runs
+python 2b_filter_manifest.py
 ```
 #### Step 4: Run pipeline
 
