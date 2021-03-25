@@ -22,7 +22,7 @@ def main():
         config = yaml.load(config_input, Loader=yaml.FullLoader)
 
     in_manifest = '/configs/manifest_unfiltered.json.gz'
-    out_manifest = '/configs/manifest_filtered.json.gz'
+    out_manifest = '/configs/manifest.json.gz'
 
     shared_cols_dict = OrderedDict([
         ('left_study', 'left_study_id'),
@@ -39,11 +39,6 @@ def main():
         ('right_alt', 'right_lead_alt'),
     ])
 
-    # Read table of completed coloc tests
-    coloc_table = pd.read_parquet("/data/coloc_raw.parquet", columns=list(shared_cols_dict.keys()))
-    coloc_table = pd.read_parquet(config['coloc_table_raw'], columns=list(shared_cols_dict.keys()))
-    coloc_table.rename(columns=shared_cols_dict, inplace=True)
-
     # Read unfiltered manifest file
     # Make sure we read these as string, not integers, since they may have "None" rather than NaN values
     manifest_dtypes = {
@@ -52,21 +47,27 @@ def main():
     }
     manifest_unfiltered = pd.read_json(in_manifest, orient='records', lines=True, dtype=manifest_dtypes)
 
-    # Remove manifest lines that are in the coloc table
-    # To do this we first join the tables, and then remove rows present in
-    # the joined table.
-    manifest_unfiltered_subset = manifest_unfiltered[shared_cols_dict.values()]
-    manifest_joined = manifest_unfiltered_subset.merge(coloc_table.drop_duplicates(), on=list(shared_cols_dict.values()), how='left', indicator=True)
+    if not config['coloc_table']:
+        manifest_filtered = manifest_unfiltered
+    else:
+        # Read table of completed coloc tests
+        coloc_table = pd.read_parquet(config['coloc_table'], columns=list(shared_cols_dict.keys()))
+        coloc_table.rename(columns=shared_cols_dict, inplace=True)
 
-    # At some point I got errors that the merge couldn't be done because some col types were "object" or "float64"
-    # I previously set the column types to fix this, e.g. ...
-    # coloc_table['left_study_id'] = coloc_table['left_study_id'].astype('string')
-    # manifest_unfiltered['left_study_id'] = manifest_unfiltered['left_study_id'].astype('string')
-    # ...etc
-    # However, it seems to work fine when the column types are perfectly matched.
+        # Remove manifest lines that are in the coloc table
+        # To do this we do a left join with the manifest, and then keep rows that are
+        # present only in the "left" side, i.e. manifest. (Removing those in "both".)
+        manifest_joined = manifest_unfiltered.merge(coloc_table.drop_duplicates(), on=list(shared_cols_dict.values()), how='left', indicator=True)
 
-    # Keep columns that were only present in the manifest and not the coloc table
-    manifest_filtered = manifest_joined[manifest_joined._merge == "left_only"].drop(columns="_merge")
+        # At some point I got errors that the merge couldn't be done because some col types were "object" or "float64"
+        # I previously set the column types to fix this, e.g. ...
+        # coloc_table['left_study_id'] = coloc_table['left_study_id'].astype('string')
+        # manifest_unfiltered['left_study_id'] = manifest_unfiltered['left_study_id'].astype('string')
+        # ...etc
+        # However, it seems to work fine when the column types are perfectly matched.
+
+        # Keep columns that were only present in the manifest and not the coloc table
+        manifest_filtered = manifest_joined[manifest_joined._merge == "left_only"].drop(columns="_merge")
 
     # Write manifest file
     os.makedirs(os.path.dirname(out_manifest), exist_ok=True)
