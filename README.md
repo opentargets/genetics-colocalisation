@@ -17,6 +17,7 @@ Warning: I have not yet implemented a way to remove old results from the manifes
 
 ### Setup environment
 
+#### Local
 ```
 git clone https://github.com/opentargets/colocalisation.git
 cd colocalisation
@@ -28,6 +29,27 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("snpStats")
 install.packages('coloc')
 install.packages("tidyverse")
+```
+
+#### Docker
+```bash
+docker build --tag otg-coloc .
+
+# Run in docker container. Can then run steps individually.
+docker run -it --rm \
+    --ulimit nofile=1024000:1024000 \
+    -v /home/js29/data:/data \
+    -v /home/js29/configs:/configs \
+    -v /home/js29/output:/output \
+    otg-coloc /bin/bash
+
+# Run full pipeline in Docker container.
+docker run -it --rm \
+    --ulimit nofile=1024000:1024000 \
+    -v /home/js29/data:/data \
+    -v /home/js29/configs:/configs \
+    -v /home/js29/output:/output \
+    otg-coloc /bin/bash run_coloc_pipeline_opt.sh
 ```
 
 ### Run a single study
