@@ -34,7 +34,7 @@ install.packages("tidyverse")
 
 ```
 # Activate environment
-source activate finemap
+source activate coloc
 
 # View args
 $ python scripts/coloc_wrapper.py --help
@@ -106,12 +106,29 @@ optional arguments:
 Requires the [same input data as the fine-mapping pipeline](https://github.com/opentargets/genetics-finemapping#step-1-prepare-input-data).
 
 Additionally, it takes the `toploci` and `credibleset` outputs from the finemapping pipeline.
+```
+cd ~/genetics-colocalisation
+mkdir -p data/ukb_v3_downsampled10k
+gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $HOME/genetics-colocalisation/data/ukb_v3_downsampled10k/
+
+mkdir -p $HOME/genetics-colocalisation/data/filtered/significant_window_2mb/gwas
+gsutil -m rsync -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas_new/ $HOME/genetics-colocalisation/data/filtered/significant_window_2mb/gwas/
+# Note, may need to delete files named "_SUCCESS" from within all parquet folders,
+# since the dask dataframe seems to choke on this when reading the parquet.
+
+mkdir -p $HOME/genetics-colocalisation/data/finemapping
+gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210309/credset $HOME/genetics-colocalisation/data/finemapping/
+gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210309/top_loci.json.gz $HOME/data/finemapping/
+
+python partition_top_loci_by_chrom.py
+
+```
 
 #### Step 2: Prepare environment
 
 ```
 # Activate environment
-source activate finemap
+source activate coloc
 
 # Set spark paths
 export PYSPARK_SUBMIT_ARGS="--driver-memory 80g pyspark-shell"
@@ -167,7 +184,7 @@ python 2_generate_manifest.py
 ```
 # Edit args in `4_run_commands.sh` then
 tmux
-bash 4_run_commands.sh
+time bash 4_run_commands.sh
 
 # Exit tmux with Ctrl+b then d
 ```
