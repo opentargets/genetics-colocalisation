@@ -5,8 +5,8 @@ dependencies:
 - python=3.7.3
 - pandas
 - python-snappy
-- fastparquet
-- dask
+- fastparquet=0.4.1
+- dask=2.30
 - numpy
 - matplotlib
 - seaborn

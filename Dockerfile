@@ -25,7 +25,7 @@ RUN apt-get update && \
     update-ca-certificates -f;
 
 # Setup JAVA_HOME -- useful for docker commandline
-ENV JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64/'
+ENV JAVA_HOME='/conda/miniconda/envs/coloc'
 
 # Google Cloud SDK
 RUN apt-get install -y curl
