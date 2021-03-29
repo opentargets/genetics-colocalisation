@@ -4,6 +4,7 @@
 set -euo pipefail
 
 # Args
+credset_dir=/data/credset/credset.json
 outf=/data/overlap_table
 
 mkdir -p configs
