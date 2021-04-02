@@ -26,8 +26,8 @@ def main():
     max_credset_threshold = None
 
     # In path patterns (server)
-    sumstats = os.path.join(config['sumstats'], '{type}/{study_id}.parquet')
-    ld_path = os.path.join(config['ld_reference'], 'ukb_v3_chr{chrom}.downsampled10k')
+    sumstats = config['sumstats']
+    ld_path = config['ld_reference']
     custom_studies = pd.read_parquet(config['custom_studies'], columns=['study_id']).study_id.unique()
 
 
