@@ -1,8 +1,8 @@
 FROM r-base:3.6.1
 
 # Create non-root user 
-ARG UID=1000
-ARG GID=1000
+ARG UID
+ARG GID
 RUN groupadd -g $GID -o otg
 RUN useradd -m -u $UID -g $GID -o -s /bin/bash otg
 
