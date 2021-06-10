@@ -16,12 +16,12 @@ import yaml
 
 def main():
     # Load config
-    with open('/coloc/configs/config.yaml') as config_input:
+    with open('configs/config.yaml') as config_input:
         config = yaml.load(config_input, Loader=yaml.FullLoader)
 
     # Parse args
     in_overlap_table = glob('/data/overlap_table/*.json.gz')[0]
-    out_manifest = '/coloc/configs/manifest.json.gz'
+    out_manifest = 'configs/manifest.json.gz'
     overlap_prop_threshold = 0.01
     max_credset_threshold = None
 

@@ -16,7 +16,7 @@ def main():
 
     # Args
     args = parse_args()
-    in_manifest = '/coloc/configs/manifest.json.gz'
+    in_manifest = 'configs/manifest.json.gz'
     out_todo = '/data/commands_todo.txt.gz'
     out_done = '/data/commands_done.txt.gz'
 
