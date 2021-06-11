@@ -29,7 +29,7 @@ def main():
     sumstats = config['sumstats']
     ld_path = config['ld_reference']
     custom_studies = pd.read_parquet(config['custom_studies'], columns=['study_id']).study_id.unique()
-
+    custom_studies = sorted(custom_studies)
 
     # Out path patterns
     data_out = '/data/output'
