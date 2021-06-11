@@ -17,14 +17,14 @@ export PYSPARK_SUBMIT_ARGS="--driver-memory 8g pyspark-shell"
 export SPARK_HOME=/Users/em21/software/spark-2.4.0-bin-hadoop2.7
 export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$PYTHONPATH
 '''
-from pyspark.sql import Window
-import pyspark.sql
-from pyspark.sql.types import *
-from pyspark.sql.functions import *
-import sys
-import os
 import gzip
 from glob import glob
+
+import pyspark.sql
+from pyspark.sql import Window
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
 
 def main():
 
@@ -38,11 +38,11 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args
-    in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
-    out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
+    in_parquet = '/data/coloc_raw.parquet'
+    out_parquet = '/data/coloc_processed.parquet'
     # in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
     # out_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.parquet'
-    in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'
+    in_phenotype_maps = '/coloc/configs/phenotype_id_gene_luts/*.tsv.gz'
 
     # Results parameters
     make_symmetric = True # Will make the coloc matrix symmetric
@@ -161,6 +161,10 @@ def main():
         df.repartitionByRange('left_chrom', 'left_pos')
         .sortWithinPartitions('left_chrom', 'left_pos')
     )
+
+    # Set column types
+    df = df.withColumn("left_chrom", df["left_chrom"].cast("string"))
+    df = df.withColumn("right_chrom", df["right_chrom"].cast("string"))
 
     # Write
     (
