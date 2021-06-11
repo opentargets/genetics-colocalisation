@@ -162,6 +162,10 @@ def main():
         .sortWithinPartitions('left_chrom', 'left_pos')
     )
 
+    # Set column types
+    df = df.withColumn("left_chrom", df["left_chrom"].cast("string"))
+    df = df.withColumn("right_chrom", df["right_chrom"].cast("string"))
+
     # Write
     (
         df
