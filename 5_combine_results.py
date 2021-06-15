@@ -14,11 +14,9 @@ export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$
 '''
 
 import pyspark.sql
-from pyspark.sql.types import *
 from pyspark.sql.functions import *
-import os
-# from shutil import copyfile
-# from glob import glob
+from pyspark.sql.types import *
+
 
 def main():
 
@@ -39,12 +37,11 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_pattern = '/home/ubuntu/results/coloc/output/left_study=*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
-    # in_res_pattern = '/home/ubuntu/results/coloc/output/left_study=GCST*/left_phenotype=*/left_bio_feature=*/left_variant=*/right_study=AL*/right_phenotype=*/right_bio_feature=*/right_variant=*/coloc_res.json.gz'
-    out_coloc = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
+    in_res_dir = '/output/coloc/'
+    out_coloc = '/output/coloc_raw.parquet'
 
     # Load
-    df = spark.read.json(in_res_pattern)
+    df = spark.read.option('basePath', in_res_dir).json(in_res_dir)
 
     # Repartition
     # df = (
@@ -53,7 +50,7 @@ def main():
     # )
 
     # Coalesce
-    df = df.coalesce(2000)
+    df = df.coalesce(200)
 
     # Write
     (

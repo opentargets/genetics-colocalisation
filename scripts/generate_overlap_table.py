@@ -34,10 +34,16 @@ def main():
     # Load and filter data
     #
 
-    # Load
+    df = spark.read.json(args.in_credset)
+    # There may not be phenotype_id or bio_feature cols if the input credset
+    # json file has no molecular QTL studies.
+    if  not 'phenotype_id' in df.columns:
+        df = df.withColumn('phenotype_id', lit(None))
+    if not 'bio_feature' in df.columns:
+        df = df.withColumn('bio_feature', lit(None))
+
     df = (
-        spark.read.json(args.in_credset)
-             .select('type', 'study_id', 'phenotype_id', 'bio_feature', 'lead_chrom',
+        df.select('type', 'study_id', 'phenotype_id', 'bio_feature', 'lead_chrom',
                      'lead_pos', 'lead_ref', 'lead_alt', 'tag_chrom', 'tag_pos',
                      'tag_ref', 'tag_alt', 'is95_credset', 'is99_credset',
                      'multisignal_method')

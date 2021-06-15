@@ -6,24 +6,24 @@
 # Reads the manifest file and makes commands
 #
 
-import os
-import sys
-import json
 import argparse
 import gzip
+import json
+import os
+
 
 def main():
 
     # Args
     args = parse_args()
-    in_manifest = 'configs/manifest.json.gz'
-    out_todo = 'commands_todo.txt.gz'
-    out_done = 'commands_done.txt.gz'
+    in_manifest = '/configs/manifest.json.gz'
+    out_todo = '/configs/commands_todo.txt.gz'
+    out_done = '/configs/commands_done.txt.gz'
 
     # Pipeline args
     script = 'scripts/coloc_wrapper.py'
     r_script = 'scripts/coloc.R'
-    top_loci_file = '/home/ubuntu/results/finemapping/results/top_loci_by_chrom/CHROM.json'
+    top_loci_file = '/data/finemapping/top_loci_by_chrom/CHROM.json'
     window_colc = 500 # in KB
     window_cond = 1000  # in KB
     min_maf = 0.01

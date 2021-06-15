@@ -33,9 +33,9 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args (dataproc)
-    in_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet'
-    in_sumstats = 'gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/union'
-    out_parquet = 'gs://genetics-portal-staging/coloc/190601/coloc_processed_w_betas.parquet'
+    in_parquet = 'gs://genetics-portal-dev-staging/coloc/210519_merged/coloc_processed.parquet'
+    in_sumstats = 'gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/union'
+    out_parquet = 'gs://genetics-portal-dev-staging/coloc/210519_merged/coloc_processed_w_betas.parquet'
     
     # # File args (local)
     # in_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
@@ -44,11 +44,11 @@ def main():
 
     # Load coloc
     coloc = spark.read.parquet(in_parquet)
-    # coloc.printSchema()
+    coloc.printSchema()
 
     # Load sumstats
     sumstats = spark.read.parquet(in_sumstats)
-    # sumstats.printSchema()
+    sumstats.printSchema()
 
     # Rename join columns on sumstat table
     sumstats_join = (

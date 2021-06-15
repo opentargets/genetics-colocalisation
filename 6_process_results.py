@@ -17,14 +17,14 @@ export PYSPARK_SUBMIT_ARGS="--driver-memory 8g pyspark-shell"
 export SPARK_HOME=/Users/em21/software/spark-2.4.0-bin-hadoop2.7
 export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-2.4.0-src.zip:$PYTHONPATH
 '''
-from pyspark.sql import Window
-import pyspark.sql
-from pyspark.sql.types import *
-from pyspark.sql.functions import *
-import sys
-import os
 import gzip
 from glob import glob
+
+import pyspark.sql
+from pyspark.sql import Window
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+
 
 def main():
 
@@ -38,11 +38,11 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args
-    in_parquet = '/home/ubuntu/results/coloc/results/coloc_raw.parquet'
-    out_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
+    in_parquet = '/output/coloc_raw.parquet'
+    out_parquet = '/output/coloc_processed.parquet'
     # in_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_raw.parquet'
     # out_parquet = '/Users/em21/Projects/genetics-colocalisation/tmp/coloc_processed.parquet'
-    in_phenotype_maps = 'configs/phenotype_id_gene_luts/*.tsv.gz'
+    in_phenotype_maps = '/configs/phenotype_id_gene_luts/*.tsv.gz'
 
     # Results parameters
     make_symmetric = True # Will make the coloc matrix symmetric
@@ -66,8 +66,10 @@ def main():
     )
 
     # Filter based on the number of snps overlapping the left and right datasets
+    last_n = df.count()
     if min_overlapping_vars:
         df = df.filter(col('coloc_n_vars') >= min_overlapping_vars)
+        print('{} coloc tests removed for having fewer than {} overlapping variants'.format(last_n - df.count(), min_overlapping_vars))
 
     # Make symmetric
     if make_symmetric:
@@ -96,7 +98,9 @@ def main():
 
     # Keep only rows where left_type == gwas
     if left_gwas_only:
+        last_n = df.count()
         df = df.filter(col('left_type') == 'gwas')
+        print('{} coloc tests removed where left_type was not gwas'.format( int(last_n - df.count())/2) )
     
     # Deduplicate right
     if deduplicate_right:
@@ -122,12 +126,14 @@ def main():
         ]
         
         # Drop duplicates, keeping first
+        last_n = df.count()
         df = drop_duplicates_keep_first(
             df,
             subset=col_subset,
             order_colname='coloc_h4',
             ascending=False
         )
+        print('{} coloc tests removed that were duplicates'.format( int((last_n - df.count())/2) ))
 
     # Add gene_id using phenotype_id
     phenotype_map = load_pheno_to_gene_map(in_phenotype_maps)
@@ -151,10 +157,12 @@ def main():
         df = df.drop('left_gene_id', 'left_bio_feature', 'left_phenotype')
 
     # Remove rows that have null in coloc stat columns
+    last_n = df.count()
     df = df.dropna(
         subset=['coloc_h3', 'coloc_h4', 'coloc_log2_h4_h3'],
         how='any'
     )
+    print('{} coloc tests removed for having NA values for H4 or H3'.format( int((last_n - df.count())/2) ))
 
     # Repartition
     df = (
