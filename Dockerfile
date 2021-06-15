@@ -29,7 +29,8 @@ RUN apt-get update && \
     update-ca-certificates -f;
 
 # Setup JAVA_HOME -- useful for docker commandline
-ENV JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64/'
+#ENV JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64/'
+ENV JAVA_HOME='/usr/lib/jvm/java-11-openjdk-amd64/'
 #ENV JAVA_HOME='/software/jdk/jdk-11/'
 
 # Install parallel
@@ -47,7 +48,7 @@ CMD ["/bin/bash"]
 
 # Install GCTA
 RUN apt-get install unzip
-RUN wget https://cnsgenomics.com/software/gcta/bin/gcta_1.92.3beta3.zip -P /software/gcta
+RUN wget https://cnsgenomics.com/software/gcta/bin/gcta_1.92.3beta3.zip --no-check-certificate -P /software/gcta
 RUN unzip /software/gcta/gcta_1.92.3beta3.zip -d /software/gcta
 RUN rm /software/gcta/gcta_1.92.3beta3.zip
 ENV PATH="/software/gcta/gcta_1.92.3beta3:${PATH}"

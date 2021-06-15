@@ -26,6 +26,8 @@ def main():
 
     shared_cols_dict = OrderedDict([
         ('left_study', 'left_study_id'),
+        ('left_phenotype', 'left_phenotype_id'),
+        ('left_bio_feature', 'left_bio_feature'),
         ('left_chrom', 'left_lead_chrom'),
         ('left_pos', 'left_lead_pos'),
         ('left_ref', 'left_lead_ref'),
@@ -42,6 +44,8 @@ def main():
     # Read unfiltered manifest file
     # Make sure we read these as string, not integers, since they may have "None" rather than NaN values
     manifest_dtypes = {
+        'left_lead_chrom': str,
+        'right_lead_chrom': str,
         'right_phenotype_id': str,
         'right_bio_feature': str,
     }
@@ -53,18 +57,19 @@ def main():
         # Read table of completed coloc tests
         coloc_table = pd.read_parquet(config['coloc_table'], columns=list(shared_cols_dict.keys()))
         coloc_table.rename(columns=shared_cols_dict, inplace=True)
-
+        
+        manifest_unfiltered.loc[manifest_unfiltered['left_phenotype_id'] == "None", 'left_phenotype_id'] = None
+        manifest_unfiltered.loc[manifest_unfiltered['left_bio_feature'] == "None", 'left_bio_feature'] = None
+        manifest_unfiltered.loc[manifest_unfiltered['right_phenotype_id'] == "None", 'right_phenotype_id'] = None
+        manifest_unfiltered.loc[manifest_unfiltered['right_bio_feature'] == "None", 'right_bio_feature'] = None
+        
         # Remove manifest lines that are in the coloc table
         # To do this we do a left join with the manifest, and then keep rows that are
         # present only in the "left" side, i.e. manifest. (Removing those in "both".)
         manifest_joined = manifest_unfiltered.merge(coloc_table.drop_duplicates(), on=list(shared_cols_dict.values()), how='left', indicator=True)
 
         # At some point I got errors that the merge couldn't be done because some col types were "object" or "float64"
-        # I previously set the column types to fix this, e.g. ...
-        # coloc_table['left_study_id'] = coloc_table['left_study_id'].astype('string')
-        # manifest_unfiltered['left_study_id'] = manifest_unfiltered['left_study_id'].astype('string')
-        # ...etc
-        # However, it seems to work fine when the column types are perfectly matched.
+        # Manually specifying the column types in the manifest above fixed this.
 
         # Keep columns that were only present in the manifest and not the coloc table
         manifest_filtered = manifest_joined[manifest_joined._merge == "left_only"].drop(columns="_merge")

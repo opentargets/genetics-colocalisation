@@ -27,8 +27,8 @@ def main(args):
     os.makedirs(os.path.split(args.out)[0], exist_ok=True)
     os.makedirs(args.tmpdir , exist_ok=True)
 
-    sumstat_wind_left = pd.read_csv(os.path.join(args.left_sumstat, 'sumstat.tsv.gz'), sep='\t', index_col='variant_id', compression='gzip')
-    sumstat_wind_right = pd.read_csv(os.path.join(args.right_sumstat, 'sumstat.tsv.gz'), sep='\t', index_col='variant_id', compression='gzip')
+    sumstat_wind_left = pd.read_csv(args.left_sumstat, sep='\t', index_col='variant_id', compression='gzip')
+    sumstat_wind_right = pd.read_csv(args.right_sumstat, sep='\t', index_col='variant_id', compression='gzip')
 
     # Take intersection
     shared_vars = sorted(
@@ -150,12 +150,12 @@ def parse_args():
 
     # Left input args
     p.add_argument('--left_sumstat',
-                   help=("Input: path to a directory with left sumstat.tsv.gz file"),
+                   help=("Input: path to file with left sumstat.tsv.gz file"),
                    metavar="<file>", type=str, required=True)
     
     # Right input args
     p.add_argument('--right_sumstat',
-                   help=("Input: path to a directory with right sumstat.tsv.gz file"),
+                   help=("Input: path to file with right sumstat.tsv.gz file"),
                    metavar="<file>", type=str, required=True)
 
     p.add_argument('--delete_tmpdir',

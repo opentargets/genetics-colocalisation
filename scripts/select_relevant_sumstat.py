@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
+# This script assumes that if an LD reference is provided, then conditional
+# analysis should be done to get conditionally independent sumstats for the
+# signal defined by the top SNP. If no LD is provided, then it simply
+# extracts sumstats for the specified window.
 
 import pandas as pd
 import logging
@@ -22,85 +26,103 @@ def main(args):
     # Start logging
     logger.info('Started selecting relevant sumstats')
 
-    # Load sumstats
-    logger.info('Loading sumstats for {0}kb conditional window'.format(
-        args.window_cond))
-    sumstat = coloc_utils.load_sumstats(
-        in_pq=args.sumstat,
-        study_id=args.study,
-        phenotype_id=args.phenotype,
-        bio_feature=args.bio_feature,
-        chrom=args.chrom,
-        start=args.pos - args.window_cond * 1000,
-        end=args.pos + args.window_cond * 1000,
-        min_maf=args.min_maf,
-        logger=logger)
-    logger.info('Loaded {0} variants'.format(sumstat.shape[0]))
-
-    logger.info('Starting conditional analysis')
-
-    # Load top loci json
-    logger.info('Loading top loci table')
-    top_loci = pd.read_json(
-        args.top_loci.replace('CHROM', args.chrom),
-        orient='records',
-        lines=True
-    )
-
-    # Make variant ID
-    varid = ':'.join([str(x) for x in [
-        args.chrom, args.pos, args.ref, args.alt]])
-
-    # Extract top loci variants
-    query = make_pandas_top_loci_query(
-        study_id=args.study,
-        phenotype_id=args.phenotype,
-        bio_feature=args.bio_feature,
-        chrom=args.chrom)
-    top_loci = top_loci.query(query)
-
-    # Create list of variants to condition on
-    cond_list = make_list_to_condition_on(
-        varid, sumstat.variant_id, top_loci.variant_id)
-    # Perform conditional on sumstats
-    if len(cond_list) > 0:
-        logger.info('Conditioning {} variants on {} variants'.format(
-            sumstat.shape[0], len(cond_list)))
-        sumstat_cond = coloc_gcta.perfrom_conditional_adjustment(
-            sumstat,
-            args.ld,
-            args.tmpdir,
-            varid,
-            args.chrom,
-            cond_list,
+    if args.ld is None:
+        # No conditional analysis - just extract sumstats
+        logger.info('Loading sumstats for {0}kb window'.format(
+            args.window_coloc))
+        sumstat_wind = coloc_utils.load_sumstats(
+            in_pq=args.sumstat,
+            study_id=args.study,
+            phenotype_id=args.phenotype,
+            bio_feature=args.bio_feature,
+            chrom=args.chrom,
+            start=args.pos - args.window_coloc * 1000,
+            end=args.pos + args.window_coloc * 1000,
+            min_maf=args.min_maf,
             logger=logger)
-        logger.info('Finished conditioning, {} variants remain'.format(
-            sumstat_cond.shape[0]))
-        # Copy the conditional stats into the original positions
-        sumstat_cond['beta'] = sumstat_cond['beta_cond']
-        sumstat_cond['se'] = sumstat_cond['se_cond']
-        sumstat_cond['pval'] = sumstat_cond['pval_cond']
-        sumstat = sumstat_cond.drop(columns=[
-            'beta_cond', 'se_cond', 'pval_cond'])
-    else:
-        logger.info('No variants to condition on')
+        logger.info('Loaded {0} variants'.format(sumstat_wind.shape[0]))
 
-    # Extract coloc window
-    logger.info('Extracting coloc window ({}kb)'.format(args.window_coloc))
+    else: # do conditional analysis
 
-    sumstat_wind = coloc_utils.extract_window(
-        sumstat,
-        args.chrom,
-        args.pos,
-        args.window_coloc)
-    logger.info('{} variants remain'.format(sumstat_wind.shape[0]))
+        # Load sumstats
+        logger.info('Loading sumstats for {0}kb conditional window'.format(
+            args.window_cond))
+        sumstat = coloc_utils.load_sumstats(
+            in_pq=args.sumstat,
+            study_id=args.study,
+            phenotype_id=args.phenotype,
+            bio_feature=args.bio_feature,
+            chrom=args.chrom,
+            start=args.pos - args.window_cond * 1000,
+            end=args.pos + args.window_cond * 1000,
+            min_maf=args.min_maf,
+            logger=logger)
+        logger.info('Loaded {0} variants'.format(sumstat.shape[0]))
+
+        logger.info('Starting conditional analysis')
+
+        # Load top loci json
+        logger.info('Loading top loci table')
+        top_loci = pd.read_json(
+            args.top_loci.replace('CHROM', args.chrom),
+            orient='records',
+            lines=True
+        )
+
+        # Make variant ID
+        varid = ':'.join([str(x) for x in [
+            args.chrom, args.pos, args.ref, args.alt]])
+
+        # Extract top loci variants
+        query = make_pandas_top_loci_query(
+            study_id=args.study,
+            phenotype_id=args.phenotype,
+            bio_feature=args.bio_feature,
+            chrom=args.chrom)
+        top_loci = top_loci.query(query)
+
+        # Create list of variants to condition on
+        cond_list = make_list_to_condition_on(
+            varid, sumstat.variant_id, top_loci.variant_id)
+        # Perform conditional on sumstats
+        if len(cond_list) > 0:
+            logger.info('Conditioning {} variants on {} variants'.format(
+                sumstat.shape[0], len(cond_list)))
+            sumstat_cond = coloc_gcta.perfrom_conditional_adjustment(
+                sumstat,
+                args.ld,
+                args.tmpdir,
+                varid,
+                args.chrom,
+                cond_list,
+                logger=logger)
+            logger.info('Finished conditioning, {} variants remain'.format(
+                sumstat_cond.shape[0]))
+            # Copy the conditional stats into the original positions
+            sumstat_cond['beta'] = sumstat_cond['beta_cond']
+            sumstat_cond['se'] = sumstat_cond['se_cond']
+            sumstat_cond['pval'] = sumstat_cond['pval_cond']
+            sumstat = sumstat_cond.drop(columns=[
+                'beta_cond', 'se_cond', 'pval_cond'])
+        else:
+            logger.info('No variants to condition on')
+
+        # Extract coloc window
+        logger.info('Extracting coloc window ({}kb)'.format(args.window_coloc))
+
+        sumstat_wind = coloc_utils.extract_window(
+            sumstat,
+            args.chrom,
+            args.pos,
+            args.window_coloc)
+        logger.info('{} variants remain'.format(sumstat_wind.shape[0]))
 
     # Write sumstat file
     sumstat_wind.to_csv(output_file_path(args), sep='\t', index=None, compression='gzip')
 
 
 def output_file_path(args):
-    return os.path.join(args.out, 'sumstat.tsv.gz')
+    return args.out
 
 
 def make_pandas_top_loci_query(study_id, phenotype_id=None,
@@ -213,5 +235,5 @@ if __name__ == '__main__':
         logger.error("The output file {} exists already. If you want to regenerate the file you have to remove it first.".format(ofp))
         sys.exit(1)
     logger.debug('Making sure {} folder exist.'.format(args.out))
-    os.makedirs(args.out, exist_ok=True)
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
     main(args)

@@ -100,7 +100,7 @@ def main():
     if left_gwas_only:
         last_n = df.count()
         df = df.filter(col('left_type') == 'gwas')
-        print('{} coloc tests removed where left_type was not gwas'.format( int(last_n - df.count())/2) ))
+        print('{} coloc tests removed where left_type was not gwas'.format( int(last_n - df.count())/2) )
     
     # Deduplicate right
     if deduplicate_right:

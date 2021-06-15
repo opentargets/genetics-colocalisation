@@ -16,12 +16,13 @@ def main(args):
     out_todo = '/configs/commands_todo.txt.gz'
     out_done = '/configs/commands_done.txt.gz'
     cache_folder = '/output/cache/'
+    logs_folder = '/output/logs/extract_sumstats'
     os.makedirs(cache_folder, exist_ok=True)
 
 
     # Pipeline args
     prepare_script = 'scripts/select_relevant_sumstat.py'
-    top_loci_file = '/data/top_loci_by_chrom/CHROM.json'
+    top_loci_file = '/data/finemapping/top_loci_by_chrom/CHROM.json'
     window_colc = 500 # in KB
     window_cond = 1000  # in KB
     min_maf = 0.01
@@ -42,14 +43,17 @@ def main(args):
 
             if args.type is None or args.type == rec['left_type']:
                 # Prepare left sumstat
-                rec['left_reduced_sumstats'] = os.path.join(cache_folder, *[ str(rec[key]) for key in ['left_type', 'left_study_id', 'left_phenotype_id', 'left_bio_feature', 'left_lead_chrom', 'left_lead_pos', 'left_lead_ref', 'left_lead_alt']])
-                log = os.path.abspath(rec['log'])
+                rec['left_reduced_sumstats'] = os.path.join(cache_folder, *[ str(rec[key]) for key in ['left_type', 'left_study_id', 'left_phenotype_id', 'left_bio_feature', 'left_lead_chrom', 'left_lead_pos', 'left_lead_ref', 'left_lead_alt']], 'sumstat.tsv.gz')
+                log = os.path.abspath(os.path.join(logs_folder, *[ str(rec[key]) for key in ['left_type', 'left_study_id', 'left_phenotype_id', 'left_bio_feature', 'left_lead_chrom', 'left_lead_pos', 'left_lead_ref', 'left_lead_alt']], 'log_file.txt'))
                 os.makedirs(os.path.dirname(log), exist_ok=True)
+                ld = None
+                if rec['left_ld'] is not None:
+                    ld = os.path.abspath(rec['left_ld'])
                 prepare_left_cmd = [
                     'python',
                     os.path.abspath(prepare_script),
                     '--sumstat', os.path.abspath(rec['left_sumstats']),
-                    '--ld', os.path.abspath(rec['left_ld']),
+                    '--ld', ld,
                     '--study', rec['left_study_id'],
                     '--phenotype', rec['left_phenotype_id'],
                     '--bio_feature', rec['left_bio_feature'],
@@ -79,14 +83,17 @@ def main(args):
 
             if args.type is None or args.type == rec['right_type']:
                 # Prepare right sumstat
-                rec['right_reduced_sumstats'] = os.path.join(cache_folder, *[ str(rec[key]) for key in ['right_type', 'right_study_id', 'right_phenotype_id', 'right_bio_feature', 'right_lead_chrom', 'right_lead_pos', 'right_lead_ref', 'right_lead_alt']])
-                log = os.path.abspath(rec['log'])
+                rec['right_reduced_sumstats'] = os.path.join(cache_folder, *[ str(rec[key]) for key in ['right_type', 'right_study_id', 'right_phenotype_id', 'right_bio_feature', 'right_lead_chrom', 'right_lead_pos', 'right_lead_ref', 'right_lead_alt']], 'sumstat.tsv.gz')
+                log = os.path.abspath(os.path.join(logs_folder, *[ str(rec[key]) for key in ['right_type', 'right_study_id', 'right_phenotype_id', 'right_bio_feature', 'right_lead_chrom', 'right_lead_pos', 'right_lead_ref', 'right_lead_alt']], 'log_file.txt'))
                 os.makedirs(os.path.dirname(log), exist_ok=True)
+                ld = None
+                if rec['right_ld'] is not None:
+                    ld = os.path.abspath(rec['right_ld'])
                 prepare_right_cmd = [
                     'python',
                     os.path.abspath(prepare_script),
                     '--sumstat', os.path.abspath(rec['right_sumstats']),
-                    '--ld', os.path.abspath(rec['right_ld']),
+                    '--ld', ld,
                     '--study', rec['right_study_id'],
                     '--phenotype', rec['right_phenotype_id'],
                     '--bio_feature', rec['right_bio_feature'],

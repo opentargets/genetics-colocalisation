@@ -37,7 +37,7 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_dir = '/output/data/'
+    in_res_dir = '/output/coloc/'
     out_coloc = '/output/coloc_raw.parquet'
 
     # Load
@@ -50,7 +50,7 @@ def main():
     # )
 
     # Coalesce
-    df = df.coalesce(2000)
+    df = df.coalesce(200)
 
     # Write
     (

@@ -9,7 +9,7 @@ import json
 import os
 from collections import OrderedDict
 from glob import glob
-
+import re
 import pandas as pd
 import yaml
 
@@ -27,7 +27,7 @@ def main():
 
     # In path patterns (server)
     sumstats = os.path.join(config['sumstats'], '{type}/{study_id}.parquet')
-    ld_path = os.path.join(config['ld_reference'], 'ukb_v3_chr{chrom}.downsampled10k')
+    ukb_ld_path = os.path.join(config['ld_reference'], 'ukb_v3_chr{chrom}.downsampled10k')
     custom_studies = None
     if config['custom_studies']:
         custom_studies = pd.read_parquet(config['custom_studies'], columns=['study_id']).study_id.unique()
@@ -35,6 +35,7 @@ def main():
 
     # Out path patterns
     data_out = '/output'
+
     # id column names to overlap table columns mapping
     id_cols_mapping = {'study': 'study_id', 'type': 'type', 'phenotype': 'phenotype_id', 'bio_feature': 'bio_feature',
                    'chrom': 'lead_chrom', 'pos': 'lead_pos', 'ref': 'lead_ref', 'alt': 'lead_alt'}
@@ -72,14 +73,16 @@ def main():
 
             # Add information for left/right
             for side in ['left', 'right']:
-
+                study_id = in_record['{}_study_id'.format(side)]
                 # Add file information
                 study_type = 'gwas' if in_record['{}_type'.format(side)] == 'gwas' else 'molecular_trait'
-                out_record['{}_sumstats'.format(side)] = sumstats.format(
-                    type=study_type,
-                    study_id=in_record['{}_study_id'.format(side)])
-                out_record['{}_ld'.format(side)] = ld_path.format(
-                    chrom=in_record['{}_lead_chrom'.format(side)])
+                out_record['{}_sumstats'.format(side)] = sumstats.format(type=study_type, study_id=study_id)
+
+                # If FinnGen, then don't specify LD, as we won't do conditioning
+                ld_path = ukb_ld_path.format(chrom=in_record['{}_lead_chrom'.format(side)])
+                if re.match('FINNGEN', study_id):
+                    ld_path = None
+                out_record['{}_ld'.format(side)] = ld_path
 
                 for i in id_cols_mapping.values():
                     out_record['{}_{}'.format(side, i)] = in_record.get('{}_{}'.format(side, i), None)
@@ -92,22 +95,24 @@ def main():
             out_record['log'] = os.path.join(data_out, 'logs', left_right_hive_partition_dirs, 'log_file.txt')
             out_record['tmpdir'] = os.path.join(data_out, 'tmp', left_right_hive_partition_dirs)
             out_record['plot'] = os.path.join(data_out, 'plot', left_right_hive_partition_dirs, 'plot.png')
-
+            
             # Make all paths absolute
             for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld',
                             'out', 'log', 'tmpdir', 'plot']:
-                out_record[colname] = os.path.abspath(out_record[colname])
+                if out_record[colname] is not None:
+                    out_record[colname] = os.path.abspath(out_record[colname])
 
             # Check that all input paths exist
             for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld']:
                 # Get path
                 in_path = out_record[colname]
-                # If plink prefix, add .bed suffix
-                if colname == 'left_ld' or colname == 'right_ld':
-                    in_path = in_path + '.bed'
-                # Assert exists
-                assert os.path.exists(in_path), \
-                    "Input file not found ({}): {}".format(colname, in_path)
+                if in_path is not None:
+                    # If plink prefix, add .bed suffix
+                    if colname == 'left_ld' or colname == 'right_ld':
+                        in_path = in_path + '.bed'
+                    # Assert exists
+                    assert os.path.exists(in_path), \
+                        "Input file not found ({}): {}".format(colname, in_path)
 
             manifest.append(out_record)
 
