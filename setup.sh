@@ -3,13 +3,11 @@
 
 set -euo pipefail
 
-mkdir -p software
-cd software
 
 # Install Java
-sudo apt install openjdk-8-jdk
-echo export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" >> ~/.profile
-. ~/.profile
+#sudo apt install openjdk-8-jdk
+#echo export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" >> ~/.profile
+#. ~/.profile
 
 # Install conda
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -27,5 +25,11 @@ sudo apt-get -y install libxml2-dev libssl-dev libcurl4-openssl-dev
 
 # Install parallel
 sudo apt install parallel
+
+# Install coloc - Need to open R as sudo and run these commands
+if (!requireNamespace("BiocManager", quietly = TRUE))
+   install.packages("BiocManager")
+# BiocManager::install("snpStats")
+# install.packages('coloc')
 
 echo COMPLETE

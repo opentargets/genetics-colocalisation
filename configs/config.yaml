@@ -1,6 +1,6 @@
 # input
 credset: '/data/finemapping/credset/'
 sumstats: '/data/filtered/significant_window_2mb/'
-coloc_table: '/data/coloc_raw.parquet'
+#coloc_table: '/data/coloc_raw.parquet'
 ld_reference: '/data/ukb_v3_downsampled10k/'
 custom_studies: null
