@@ -16,7 +16,7 @@ import yaml
 
 def main():
     # Load config
-    with open('/coloc/configs/config.yaml') as config_input:
+    with open('/configs/config.yaml') as config_input:
         config = yaml.load(config_input, Loader=yaml.FullLoader)
 
     # Parse args
@@ -47,80 +47,78 @@ def main():
         return os.path.join(*dirs)
 
     manifest = []
-    with gzip.open(in_overlap_table, 'r') as in_h:
-        for in_record in in_h:
-            in_record = json.loads(in_record.decode())
-
-            if custom_studies and in_record['left_study_id'] not in custom_studies and \
-                    in_record['right_study_id'] not in custom_studies:
-                continue
-
-            out_record = OrderedDict()
-
-            # Skip if proportion_overlap < prop_threshold
-            if overlap_prop_threshold:
-                max_overlap_prop = max(in_record['left_overlap_prop'],
-                                    in_record['right_overlap_prop'])
-                if max_overlap_prop < overlap_prop_threshold:
-                    continue
-
-            #  Skip if the biggest credible has > max_credset_threshold variants
-            if max_credset_threshold:
-                max_credset_size = max(in_record['left_num_tags'],
-                                    in_record['right_num_tags'])
-                if max_credset_size > max_credset_threshold:
-                    continue
-
-            # Add information for left/right
-            for side in ['left', 'right']:
-                study_id = in_record['{}_study_id'.format(side)]
-                # Add file information
-                study_type = 'gwas' if in_record['{}_type'.format(side)] == 'gwas' else 'molecular_trait'
-                out_record['{}_sumstats'.format(side)] = sumstats.format(type=study_type, study_id=study_id)
-
-                # If FinnGen, then don't specify LD, as we won't do conditioning
-                ld_path = ukb_ld_path.format(chrom=in_record['{}_lead_chrom'.format(side)])
-                if re.match('FINNGEN', study_id):
-                    ld_path = None
-                out_record['{}_ld'.format(side)] = ld_path
-
-                for i in id_cols_mapping.values():
-                    out_record['{}_{}'.format(side, i)] = in_record.get('{}_{}'.format(side, i), None)
-
-            # Add method (always conditional for now)
-            out_record['method'] = 'conditional'
-
-            left_right_hive_partition_dirs = construct_left_right_hive_partition_dirs(in_record)
-            out_record['out'] = os.path.join(data_out, 'data', left_right_hive_partition_dirs, 'coloc_res.json.gz')
-            out_record['log'] = os.path.join(data_out, 'logs', left_right_hive_partition_dirs, 'log_file.txt')
-            out_record['tmpdir'] = os.path.join(data_out, 'tmp', left_right_hive_partition_dirs)
-            out_record['plot'] = os.path.join(data_out, 'plot', left_right_hive_partition_dirs, 'plot.png')
-            
-            # Make all paths absolute
-            for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld',
-                            'out', 'log', 'tmpdir', 'plot']:
-                if out_record[colname] is not None:
-                    out_record[colname] = os.path.abspath(out_record[colname])
-
-            # Check that all input paths exist
-            for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld']:
-                # Get path
-                in_path = out_record[colname]
-                if in_path is not None:
-                    # If plink prefix, add .bed suffix
-                    if colname == 'left_ld' or colname == 'right_ld':
-                        in_path = in_path + '.bed'
-                    # Assert exists
-                    assert os.path.exists(in_path), \
-                        "Input file not found ({}): {}".format(colname, in_path)
-
-            manifest.append(out_record)
-
     # Write manifest file
     os.makedirs(os.path.dirname(out_manifest), exist_ok=True)
     with gzip.open(out_manifest, 'w') as out_h:
-        for record in manifest:
-            out_h.write((json.dumps(record) + '\n').encode())
+        with gzip.open(in_overlap_table, 'r') as in_h:
+            # Go through each overlap
+            for in_record in in_h:
+                in_record = json.loads(in_record.decode())
+
+                if custom_studies and in_record['left_study_id'] not in custom_studies and \
+                        in_record['right_study_id'] not in custom_studies:
+                    continue
+
+                out_record = OrderedDict()
+
+                # Skip if proportion_overlap < prop_threshold
+                if overlap_prop_threshold:
+                    max_overlap_prop = max(in_record['left_overlap_prop'],
+                                        in_record['right_overlap_prop'])
+                    if max_overlap_prop < overlap_prop_threshold:
+                        continue
+
+                #  Skip if the biggest credible has > max_credset_threshold variants
+                if max_credset_threshold:
+                    max_credset_size = max(in_record['left_num_tags'],
+                                        in_record['right_num_tags'])
+                    if max_credset_size > max_credset_threshold:
+                        continue
+
+                # Add information for left/right
+                for side in ['left', 'right']:
+                    study_id = in_record['{}_study_id'.format(side)]
+                    # Add file information
+                    study_type = 'gwas' if in_record['{}_type'.format(side)] == 'gwas' else 'molecular_trait'
+                    out_record['{}_sumstats'.format(side)] = sumstats.format(type=study_type, study_id=study_id)
+
+                    # If FinnGen, then don't specify LD, as we won't do conditioning
+                    ld_path = ukb_ld_path.format(chrom=in_record['{}_lead_chrom'.format(side)])
+                    if re.match('FINNGEN', study_id):
+                        ld_path = None
+                    out_record['{}_ld'.format(side)] = ld_path
+
+                    for i in id_cols_mapping.values():
+                        out_record['{}_{}'.format(side, i)] = in_record.get('{}_{}'.format(side, i), None)
+
+                # Add method (always conditional for now)
+                out_record['method'] = 'conditional'
+
+                left_right_hive_partition_dirs = construct_left_right_hive_partition_dirs(in_record)
+                out_record['out'] = os.path.join(data_out, 'data', left_right_hive_partition_dirs, 'coloc_res.json.gz')
+                out_record['log'] = os.path.join(data_out, 'logs', 'coloc', left_right_hive_partition_dirs, 'log_file.txt')
+                out_record['tmpdir'] = os.path.join(data_out, 'tmp', left_right_hive_partition_dirs)
+                out_record['plot'] = os.path.join(data_out, 'plot', left_right_hive_partition_dirs, 'plot.png')
+                
+                # Make all paths absolute
+                for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld',
+                                'out', 'log', 'tmpdir', 'plot']:
+                    if out_record[colname] is not None:
+                        out_record[colname] = os.path.abspath(out_record[colname])
+
+                # Check that all input paths exist
+                for colname in ['left_sumstats', 'left_ld', 'right_sumstats', 'right_ld']:
+                    # Get path
+                    in_path = out_record[colname]
+                    if in_path is not None:
+                        # If plink prefix, add .bed suffix
+                        if colname == 'left_ld' or colname == 'right_ld':
+                            in_path = in_path + '.bed'
+                        # Assert exists
+                        assert os.path.exists(in_path), \
+                            "Input file not found ({}): {}".format(colname, in_path)
+
+                out_h.write((json.dumps(out_record) + '\n').encode())
 
     return 0
 
