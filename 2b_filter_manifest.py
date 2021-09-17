@@ -18,7 +18,7 @@ import yaml
 
 def main():
     # Load config
-    with open('/coloc/configs/config.yaml') as config_input:
+    with open('/configs/config.yaml') as config_input:
         config = yaml.load(config_input, Loader=yaml.FullLoader)
 
     in_manifest = '/configs/manifest_unfiltered.json.gz'
