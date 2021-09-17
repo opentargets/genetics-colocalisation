@@ -22,6 +22,11 @@ Warning: I have not yet implemented a way to remove old results from the manifes
 git clone https://github.com/opentargets/genetics-colocalisation.git
 cd genetics-colocalisation
 bash setup.sh
+# The last time I ran this it would hang at "solving environment..."
+# I got around this by creating the env and then manually installing
+# each package with conda install <name>
+# Offending packages is probably r-coloc. Workaround is to open R
+# and manually install coloc.
 conda env create -n coloc --file environment.yaml
 ```
 
@@ -31,24 +36,28 @@ conda env create -n coloc --file environment.yaml
 # (Simplest is to install using the convenience script):
 # https://docs.docker.com/engine/install/ubuntu/#install-using-the-convenience-script
 
+# May need to update some permissions to get docker running, e.g.:
+# https://stackoverflow.com/questions/56305613/cant-add-user-to-docker-group
 
 # Build the docker environment (takes ~10 min)
 docker build --tag otg-coloc .
 
+mv configs $HOME/
+
 # Run in docker container. Can then run steps individually.
 docker run -it --rm \
     --ulimit nofile=1024000:1024000 \
-    -v /home/js29/data:/data \
-    -v /home/js29/configs:/configs \
-    -v /home/js29/output:/output \
+    -v $HOME/data:/data \
+    -v $HOME/configs:/configs \
+    -v $HOME/output:/output \
     otg-coloc /bin/bash
 
 # Run full pipeline in Docker container.
 docker run -it --rm \
     --ulimit nofile=1024000:1024000 \
-    -v /home/js29/data:/data \
-    -v /home/js29/configs:/configs \
-    -v /home/js29/output:/output \
+    -v $HOME/data:/data \
+    -v $HOME/configs:/configs \
+    -v $HOME/output:/output \
     otg-coloc /bin/bash run_coloc_pipeline_opt.sh
 ```
 
@@ -131,28 +140,43 @@ Additionally, it takes the `toploci` and `credibleset` outputs from the finemapp
 To avoid re-running coloc tests that were computed previously, it takes the "raw" coloc output file from previous runs.
 ```
 DATADIR=$HOME/data # for Docker pipeline
+mkdir $DATADIR
 #DATADIR=$HOME/genetics-colocalisation/data # for original pipeline
 
 mkdir -p $DATADIR/ukb_v3_downsampled10k
-gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $DATADIR/ukb_v3_downsampled10k/
-
 mkdir -p $DATADIR/filtered/significant_window_2mb/gwas
-gsutil -m rsync -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas/ $DATADIR/filtered/significant_window_2mb/gwas/
-gsutil -m rsync -r gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/gwas/ $DATADIR/filtered/significant_window_2mb/gwas/
 mkdir -p $DATADIR/filtered/significant_window_2mb/molecular_trait
-gsutil -m rsync -r gs://genetics-portal-sumstats-b38/filtered/significant_window_2mb/molecular_trait/ $DATADIR/filtered/significant_window_2mb/molecular_trait/
 
-#gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas/GCST* $DATADIR/filtered/significant_window_2mb/gwas/
-#gsutil -m rsync -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas_new/ $DATADIR/filtered/significant_window_2mb/gwas/
+# If on same machine as fine-mapping pipeline, then the following:
+mv $HOME/genetics-finemapping/data/ukb_v3_downsampled10k $DATADIR/ukb_v3_downsampled10k
+
+for f in ~/genetics-finemapping/data/filtered/significant_window_2mb/*/gwas/*.parquet; do
+  fname=`basename $f`
+  echo $DATADIR/filtered/significant_window_2mb/gwas/$fname
+  mv $f $DATADIR/filtered/significant_window_2mb/gwas/$fname
+done
+
+for f in ~/genetics-finemapping/data/filtered/significant_window_2mb/*/molecular_trait/*.parquet; do
+  fname=`basename $f`
+  echo $DATADIR/filtered/significant_window_2mb/molecular_trait/$fname
+  mv $f $DATADIR/filtered/significant_window_2mb/molecular_trait/$fname
+done
+
+
+# Otherwise, this:
+#gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $DATADIR/ukb_v3_downsampled10k/
+#gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/*/gwas/*.parquet $DATADIR/filtered/significant_window_2mb/gwas/
+#gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/*/molecular_trait/*.parquet $DATADIR/filtered/significant_window_2mb/molecular_trait/
 
 # Note, need to delete files named "_SUCCESS" from within all parquet folders,
 # since the dask dataframe seems to choke on this when reading the parquet.
+# Edit: In the latest run this doesn't seem to be necessary?!
 find $DATADIR -name "*_SUCCESS" | wc -l
 find $DATADIR -name "*_SUCCESS" -delete
 
 mkdir -p $DATADIR/finemapping
-gsutil -m cp gs://genetics-portal-dev-staging/finemapping/merged_210515/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
-gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/merged_210515/credset $DATADIR/finemapping/
+gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210825/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
+gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210825/credset $DATADIR/finemapping/
 
 # The previous coloc file is used to avoid repeating coloc tests that were already done.
 # The "raw" file is best for this, since the "processed" one could have had some tests removed already.
@@ -279,16 +303,17 @@ To run on google dataproc:
 gcloud beta dataproc clusters create \
     js-coloc-beta-join \
     --image-version=preview \
-    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.driver.memory=8g,spark:spark.executor.memory=70g,spark:spark.executor.cores=8,spark:spark.executor.instances=3 \
-    --master-machine-type=n1-highmem-32 \
+    --properties=spark:spark.debug.maxToStringFields=100,spark:spark.driver.memory=25g,spark:spark.executor.memory=76g,spark:spark.executor.cores=8,spark:spark.executor.instances=6 \
+    --master-machine-type=n2-highmem-64 \
     --master-boot-disk-size=2TB \
-    --num-master-local-ssds=1 \
+    --num-master-local-ssds=8 \
     --zone=europe-west1-d \
     --initialization-action-timeout=20m \
     --single-node \
     --project=open-targets-genetics-dev \
     --region=europe-west1 \
     --max-idle=10m
+# Cluster will automatically shutdown after 10 minutes idle
 
 # Submit to dataproc
 gcloud dataproc jobs submit pyspark \
@@ -307,8 +332,6 @@ gcloud compute ssh js-coloc-beta-join-m \
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --proxy-server="socks5://localhost:1080" \
   --user-data-dir="/tmp/js-coloc-beta-join-m" http://js-coloc-beta-join-m:8088
-
-# Cluster will automatically shutdown after 10 minutes idle
 ```
 
 ### Other
