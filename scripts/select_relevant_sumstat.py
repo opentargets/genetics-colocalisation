@@ -88,7 +88,7 @@ def main(args):
         if len(cond_list) > 0:
             logger.info('Conditioning {} variants on {} variants'.format(
                 sumstat.shape[0], len(cond_list)))
-            sumstat_cond = coloc_gcta.perfrom_conditional_adjustment(
+            sumstat_cond = coloc_gcta.perform_conditional_adjustment(
                 sumstat,
                 args.ld,
                 args.tmpdir,

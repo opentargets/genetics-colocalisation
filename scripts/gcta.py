@@ -8,7 +8,7 @@ import subprocess as sp
 import os
 import pandas as pd
 
-def perfrom_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
+def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
         chrom, condition_on, logger=None):
     ''' Uses GCTA-cojo to perform conditional analysis
     Args:

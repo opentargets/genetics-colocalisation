@@ -128,7 +128,7 @@ def run_coloc(left_ss, right_ss, tmp_dir):
     ]
 
     # Run command
-    # print(' '.join(cmd))
+    print(' '.join(cmd))
     fnull = open(os.devnull, 'w')
     cp = sp.run(' '.join(cmd), shell=True, stdout=fnull, stderr=sp.STDOUT)
 
