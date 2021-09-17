@@ -184,7 +184,7 @@ gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210825/credset $DAT
 gsutil -m cp -r gs://genetics-portal-staging/coloc/190601/coloc_raw.parquet $DATADIR/
 gsutil -m cp -r gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet $DATADIR/
 
-python partition_top_loci_by_chrom.py
+python partition_top_loci_by_chrom.py # Script from fine-mapping pipeline
 ```
 
 #### Step 2: Prepare environment
