@@ -32,6 +32,8 @@ def main():
     spark = (
         pyspark.sql.SparkSession.builder
         .config("spark.master", "local[*]")
+        .config("spark.driver.memory", "10g")
+        .config("spark.executor.memory", "2g")
         .getOrCreate()
     )
     # sc = spark.sparkContext
@@ -151,6 +153,14 @@ def main():
                 .otherwise(lit(None))
         )
     
+    # Set phenotype_id and bio_feature to null if they somehow have the value "None"
+    for colname in ['left_phenotype', 'left_bio_feature', 'right_phenotype', 'right_bio_feature']:
+        df = df.withColumn(
+            colname,
+            when(col(colname).eqNullSafe('None'), lit(None))
+                .otherwise(col(colname))
+        )
+
     # Remove unneeded columns
     df = df.drop('left_sumstat', 'right_sumstat')
     if left_gwas_only:

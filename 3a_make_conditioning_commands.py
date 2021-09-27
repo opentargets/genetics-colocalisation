@@ -75,7 +75,6 @@ def main(args):
                     # Skip if output exists
                     if os.path.exists(rec['left_reduced_sumstats']):
                         done_h.write((cmd_str + '\n').encode())
-                        continue
                     else:
                         todo_h.write((cmd_str + '\n').encode())
                         if not args.quiet:
@@ -115,19 +114,18 @@ def main(args):
                     # Skip if output exists
                     if os.path.exists(rec['right_reduced_sumstats']):
                         done_h.write((cmd_str + '\n').encode())
-                        continue
                     else:
                         todo_h.write((cmd_str + '\n').encode())
                         if not args.quiet:
                             print(cmd_str)
 
-            out_json_lines.add(json.dumps(rec) + "\n")
+            out_json_lines.add((json.dumps(rec) + "\n").encode())
         
     done_h.close()
     todo_h.close()
     
     # Save the matching manifest items as a new manifest for the coloc step
-    with gzip.open(out_manifest, 'wt') as out_mani:
+    with gzip.open(out_manifest, 'w') as out_mani:
         out_mani.writelines(out_json_lines)
 
 

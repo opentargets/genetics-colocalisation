@@ -27,6 +27,7 @@ def main():
         .config("spark.sql.files.ignoreCorruptFiles", "true")
         .config("spark.master", "local[*]")
         .config("spark.driver.maxResultSize", "0")
+        .config("spark.driver.memory", "100g")
         .config("spark.executor.memory", "2g")
         .getOrCreate()
     )
@@ -37,11 +38,37 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_dir = '/output/coloc/'
+    in_res_dir = '/output/data/'
     out_coloc = '/output/coloc_raw.parquet'
 
+    res_schema = (
+        StructType()
+        .add('nsnps', IntegerType(), False)
+        .add('PP.H0.abf', DoubleType(), False)
+        .add('PP.H1.abf', DoubleType(), False)
+        .add('PP.H2.abf', DoubleType(), False)
+        .add('PP.H3.abf', DoubleType(), False)
+        .add('PP.H4.abf', DoubleType(), False)
+        .add('left_study', StringType(), False)
+        .add('left_type', StringType(), False)
+        .add('left_phenotype', StringType(), True)
+        .add('left_bio_feature', StringType(), True)
+        .add('left_chrom', StringType(), False)
+        .add('left_pos', IntegerType(), False)
+        .add('left_ref', StringType(), False)
+        .add('left_alt', StringType(), False)
+        .add('right_study', StringType(), False)
+        .add('right_type', StringType(), False)
+        .add('right_phenotype', StringType(), True)
+        .add('right_bio_feature', StringType(), True)
+        .add('right_chrom', StringType(), False)
+        .add('right_pos', IntegerType(), False)
+        .add('right_ref', StringType(), False)
+        .add('right_alt', StringType(), False)
+    )
+
     # Load
-    df = spark.read.option('basePath', in_res_dir).json(in_res_dir)
+    df = spark.read.option('basePath', in_res_dir).json(in_res_dir, schema=res_schema)
 
     # Repartition
     # df = (
@@ -51,6 +78,7 @@ def main():
 
     # Coalesce
     df = df.coalesce(200)
+    df.explain()
 
     # Write
     (

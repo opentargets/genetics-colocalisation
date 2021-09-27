@@ -3,15 +3,30 @@ FROM r-base:3.6.1
 ENV credset_dir='/data/finemapping/credset'
 ENV DEBIAN_FRONTEND=noninteractive
 
+# RUN apt-get update && \
+#     apt-get remove -y -o APT::Immediate-Configure=0 libgcc1 && \
+#     apt-get install -y ant && \
+#     apt-get clean;
+
 # Install OpenJDK-8
 RUN apt-get update && \
-    apt-get remove -y -o APT::Immediate-Configure=0 libgcc1 && \
-    apt-get install -y ant && \
+    apt-get install -y gcc-9-base libgcc-9-dev libc6-dev && \
+    apt-get install -y openjdk-8-jdk && \
     apt-get clean;
+
+# Fix certificate issues
+RUN apt-get update && \
+    apt-get install ca-certificates-java && \
+    apt-get clean && \
+    update-ca-certificates -f;
 
 # Install JDK-11 (by JS, but later removed)
 #RUN wget https://download.java.net/java/ga/jdk11/openjdk-11_linux-x64_bin.tar.gz -P /software/jdk
 #RUN tar -xvf /software/jdk/openjdk-11*_bin.tar.gz -C /software/jdk/
+
+# Install parallel
+RUN apt-get update && \
+    apt-get install -yf parallel
 
 # Conda and the environment dependencies
 RUN mkdir /conda
@@ -20,23 +35,14 @@ RUN bash /conda/miniconda.sh -b -p /conda/miniconda
 ENV PATH="/conda/miniconda/bin:${PATH}"
 COPY ./environment.yaml /coloc/
 WORKDIR /coloc
+# I'm not sure why, but in latest build it takes many hours for
+# conda to complete "solving environment..."
 RUN conda env create -n coloc --file environment.yaml
 
-# Fix certificate issues
-RUN apt-get update && \
-    apt-get install ca-certificates-java && \
-    apt-get clean && \
-    update-ca-certificates -f;
-
 # Setup JAVA_HOME -- useful for docker commandline
-#ENV JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64/'
-ENV JAVA_HOME='/usr/lib/jvm/java-11-openjdk-amd64/'
+ENV JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64/'
+# ENV JAVA_HOME='/usr/lib/jvm/java-11-openjdk-amd64/'
 #ENV JAVA_HOME='/software/jdk/jdk-11/'
-
-# Install parallel
-RUN apt-get update && \
-    apt-get install -y gcc-9-base libgcc-9-dev libc6-dev && \
-    apt-get install -yf parallel
 
 # Google Cloud SDK
 # (Not needed on google VMs)
@@ -53,11 +59,12 @@ RUN unzip /software/gcta/gcta_1.92.3beta3.zip -d /software/gcta
 RUN rm /software/gcta/gcta_1.92.3beta3.zip
 ENV PATH="/software/gcta/gcta_1.92.3beta3:${PATH}"
 
-# Install R packages - now done via conda, so this can probably be removed
-#RUN apt-get -y install libxml2-dev libssl-dev libcurl4-openssl-dev
-#RUN Rscript -e "install.packages('BiocManager', dependencies=TRUE, repos='http://cran.rstudio.com/')" -e "BiocManager::install(c('snpStats'))"
-#RUN R -e "install.packages('coloc', dependencies=TRUE, repos='http://cran.rstudio.com/')"
-#RUN R -e "install.packages('tidyverse', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+# Install R packages
+# Coloc install didn't seem to work well via Conda, so doing it here
+RUN apt-get -y install libxml2-dev libssl-dev libcurl4-openssl-dev
+RUN Rscript -e "install.packages('BiocManager', dependencies=TRUE, repos='http://cran.rstudio.com/')" -e "BiocManager::install(c('snpStats'))"
+RUN R -e "install.packages('coloc', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('tidyverse', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
 # Copy project to its own coloc directory
 COPY ./ /coloc

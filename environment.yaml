@@ -12,6 +12,4 @@ dependencies:
 - seaborn
 - pyspark
 - pyyaml
-- r-coloc
-- r-tidyverse
 - java-jdk=8

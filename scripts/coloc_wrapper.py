@@ -122,7 +122,7 @@ def main():
         if len(cond_list_left) > 0:
             logger.info(' Left, conditioning {} variants on {} variants'.format(
                 sumstat_left.shape[0], len(cond_list_left)))
-            sumstat_cond_left = coloc_gcta.perfrom_conditional_adjustment(
+            sumstat_cond_left = coloc_gcta.perform_conditional_adjustment(
                 sumstat_left,
                 args.left_ld,
                 args.tmpdir,
@@ -145,7 +145,7 @@ def main():
         if len(cond_list_right) > 0:
             logger.info(' Right, conditioning {} variants on {} variants'.format(
                 sumstat_right.shape[0], len(cond_list_right)))
-            sumstat_cond_right = coloc_gcta.perfrom_conditional_adjustment(
+            sumstat_cond_right = coloc_gcta.perform_conditional_adjustment(
                 sumstat_right,
                 args.right_ld,
                 args.tmpdir,

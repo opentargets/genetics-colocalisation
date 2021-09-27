@@ -52,7 +52,7 @@ def main():
     # Filter on credset
     df = df.filter(col('is{}_credset'.format(args.which_set)))
 
-    # Filter of method
+    # Filter on method
     if args.which_method != 'all':
         df = df.filter(col('multisignal_method') == args.which_method)
 

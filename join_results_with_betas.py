@@ -33,9 +33,9 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args (dataproc)
-    in_parquet = 'gs://genetics-portal-dev-staging/coloc/210519_merged/coloc_processed.parquet'
-    in_sumstats = 'gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/union'
-    out_parquet = 'gs://genetics-portal-dev-staging/coloc/210519_merged/coloc_processed_w_betas.parquet'
+    in_parquet = 'gs://genetics-portal-dev-staging/coloc/210915/coloc_processed.parquet'
+    in_sumstats = 'gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb_union'
+    out_parquet = 'gs://genetics-portal-dev-staging/coloc/210915/coloc_processed_w_betas.parquet'
     
     # # File args (local)
     # in_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
