@@ -129,6 +129,7 @@ def main():
     merged = (
         merged
         .filter((col('left_match') == lit(1)) & (col('right_match') == lit(1)))
+        .drop('left_match', 'right_match')
     )
     print("Number of rows end: {}".format(merged.count()))
 

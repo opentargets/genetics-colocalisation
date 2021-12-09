@@ -27,9 +27,9 @@ docker run -it --rm \
     -v ~/output:/output \
     otg-coloc /bin/bash
 
-NCORES=220
+NCORES=31
 
-export PYSPARK_SUBMIT_ARGS="--driver-memory 50g pyspark-shell"
+export PYSPARK_SUBMIT_ARGS="--driver-memory 150g pyspark-shell"
 time /bin/bash 1_find_overlaps.sh # 10 min last run
 time python 2_generate_manifest.py # 
 time python 2b_filter_manifest.py
@@ -39,7 +39,7 @@ time python 2b_filter_manifest.py
 # to shuf then nothing will start before 30 min.
 # Last run took about 5 hrs to generate the commands.
 #time python 3a_make_conditioning_commands.py --quiet
-#time zcat /configs/commands_todo.txt.gz | shuf | parallel -j $NCORES --bar --joblog /output/parallel.jobs.prep.log
+#time zcat /configs/commands_todo.txt.gz | shuf | parallel -j $NCORES --bar --joblog /output/parallel.jobs.prep.2.log
 time python 3a_make_conditioning_commands.py | shuf | parallel -j $NCORES --bar --joblog /output/parallel.jobs.prep.log
 
 # Generating commands took 7.5 hrs for the last run (3.8 million manifest lines).
@@ -53,9 +53,15 @@ cat /output/coloc_completed_files.tsv | cut -f 27 | sed 's/file:\/\//g' | sed 's
 
 #time python 3b_make_coloc_commands.py --quiet
 #time python 3b_make_coloc_commands.fix.py --quiet
-#time zcat /configs/commands_todo.txt.gz | shuf | parallel -j $NCORES --joblog /output/parallel.jobs.coloc.run2.log
+#time zcat /configs/commands_todo.txt.gz | shuf | parallel -j $NCORES --joblog /output/parallel.jobs.coloc.run3.log
 time python 3b_make_coloc_commands.py | shuf | parallel -j $NCORES --joblog /output/parallel.jobs.coloc.log
 
 time python 5_combine_results.py # Took 14 hrs last run
-time python 6_process_results.py # Takes just a minute or so
+
+# Fix that was needed when preparing R6 - shouldn't generally need to be run
+#cp /output/coloc_raw.parquet /output/coloc_raw_needs_fix.parquet
+#export PYSPARK_SUBMIT_ARGS="--driver-memory 10g pyspark-shell"
+#time python other/5b_filter_for_top_loci.py # Takes just a minute or two
+
+time python 6_process_results.py # Takes just a minute or two
 time python 7_merge_previous_results.py
