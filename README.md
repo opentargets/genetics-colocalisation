@@ -175,8 +175,8 @@ find $DATADIR -name "*_SUCCESS" | wc -l
 find $DATADIR -name "*_SUCCESS" -delete
 
 mkdir -p $DATADIR/finemapping
-gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210825/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
-gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210825/credset $DATADIR/finemapping/
+gsutil -m cp gs://genetics-portal-dev-staging/finemapping/210923/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
+gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210923/credset $DATADIR/finemapping/
 
 # The previous coloc file is used to avoid repeating coloc tests that were already done.
 # The "raw" file is best for this, since the "processed" one could have had some tests removed already.
@@ -292,7 +292,7 @@ This step was added at a later date to join the summary stats onto the coloc res
 
 This step requires the summary stats to be concatenated into a single parquet dataset and partitioned by chrom, pos. Script to do this is available [here](https://github.com/opentargets/genetics-sumstat-data/blob/master/filters/significant_window_extraction/union_and_repartition_into_single_dataset.py).
 
-To run on google dataproc:
+To run on google dataproc: (last run took XX hrs)
 
 ```
 # Open join_results_with_betas.py and specify file arguments
@@ -323,8 +323,10 @@ gcloud dataproc jobs submit pyspark \
     --project=open-targets-genetics-dev \
     --region=europe-west1 \
     join_results_with_betas.py
+```
 
 # To monitor job
+```
 gcloud compute ssh js-coloc-beta-join-m \
   --project=open-targets-genetics-dev \
   --zone=europe-west1-d -- -D 1080 -N
@@ -361,4 +363,29 @@ ls -rt logs/left_study\=*/left_phenotype\=*/left_bio_feature\=*/left_variant\=*/
 
 # Cat all log files
 find /output/logs -name "log_file.txt" -exec cat {} \; | less
+```
+
+##### Miscellaneous
+
+```
+gcloud beta dataproc clusters create \
+    js-coloc-beta-join \
+    --image-version=preview \
+    --properties=spark:spark.debug.maxToStringFields=100 \
+    --master-machine-type=n2-highmem-8 \
+    --master-boot-disk-size=1TB \
+    --zone=europe-west1-d \
+    --initialization-action-timeout=20m \
+    --single-node \
+    --project=open-targets-genetics-dev \
+    --region=europe-west1 \
+    --max-idle=10m
+
+gcloud dataproc jobs submit pyspark \
+    --cluster=js-coloc-beta-join \
+    --async \
+    --properties spark.submit.deployMode=cluster \
+    --project=open-targets-genetics-dev \
+    --region=europe-west1 \
+    othercount_coloc_rows.py
 ```
