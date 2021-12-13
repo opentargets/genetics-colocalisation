@@ -1,4 +1,4 @@
-FROM r-base:3.6.1
+FROM r-base:3.6.3
 
 ENV credset_dir='/data/finemapping/credset'
 ENV DEBIAN_FRONTEND=noninteractive

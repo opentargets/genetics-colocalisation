@@ -8,6 +8,8 @@ Colocalisation pipeline for Open Targets Genetics. In brief:
 
 Warning: I have not yet implemented a way to remove old results from the manifest file in order to skip them (prevent duplicating the computation), or a way to merge new and old results. This will affect steps 3 and 5 below.
 
+It's highly recommended to run the whole pipeline through with a subset of data (e.g. by taking just the first few lines of the manifest after generating it), to ensure that all steps are working correctly, before scaling up to a large machine.
+
 ### Requirements
 - R
 - Spark v2.4.0

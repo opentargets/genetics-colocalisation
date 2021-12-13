@@ -1,0 +1,33 @@
+Filtered sumstats:
+
+1000 coloc-prep in 6m00 (2.78 /s)
+real	6m0.204s
+user	160m37.451s
+sys	23m45.252s
+
+
+1000 coloc-run in 4m10 (4.00 /s)
+real	4m9.813s
+user	107m45.445s
+sys	20m41.910s
+
+
+
+
+
+Unfiltered sumstats:
+
+1000 coloc-prep in 10m22 (1.61/s)
+real	10m22.308s
+user	247m30.594s
+sys	59m11.764s
+
+
+1000 coloc-run in 4m20 (3.85/s)
+real	4m20.015s
+user	107m46.961s
+sys	23m12.669s
+
+
+
+It is slightly faster to run the GCTA portion of the coloc analysis (getting conditionally-independent sumstats) when using filtered sumstats. However, the gain (40%) isn't as dramatic as hoped. Moreover, the results aren't correct, as seen in the visualisations comparing the coloc H4 values between runs.

@@ -1,0 +1,70 @@
+---
+title: "Explore drug QTL concordance"
+author: "Jeremy Schwartzentruber"
+date: "18/11/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(sparklyr)
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+
+```{r}
+sc <- spark_connect(master = "local")
+
+spark_tbl_coloc_flt <- spark_read_parquet(sc, "coloc_filtered", "output/coloc_raw_filtered.parquet/*.parquet")
+coloc_flt <- collect(spark_tbl_coloc_flt)
+
+spark_tbl_coloc_unflt <- spark_read_parquet(sc, "coloc_unfiltered", "output/coloc_raw_unfiltered.parquet/*.parquet")
+coloc_unflt <- collect(spark_tbl_coloc_unflt)
+
+spark_disconnect(sc)
+```
+
+
+
+```{r}
+coloc_flt = coloc_flt %>%
+  mutate(test_id = paste(left_study, left_chrom, left_pos, left_ref, left_alt,
+                         right_study, right_phenotype, right_bio_feature, right_chrom, right_pos, right_ref, right_alt,
+                         sep='.'))  %>%
+  select(H4_flt = PP.H4.abf,
+         left_study, left_chrom, left_pos, left_ref, left_alt,
+         right_study, right_phenotype, right_bio_feature, right_chrom, right_pos, right_ref, right_alt,
+         test_id) 
+
+coloc_unflt = coloc_unflt %>%
+  mutate(test_id = paste(left_study, left_chrom, left_pos, left_ref, left_alt,
+                         right_study, right_phenotype, right_bio_feature, right_chrom, right_pos, right_ref, right_alt,
+                         sep='.')) %>%
+  select(H4 = PP.H4.abf,
+         left_study, left_chrom, left_pos, left_ref, left_alt,
+         right_study, right_phenotype, right_bio_feature, right_chrom, right_pos, right_ref, right_alt,
+         test_id) 
+
+df = coloc_flt %>%
+  inner_join(coloc_unflt %>% select(H4, test_id), by = "test_id") %>%
+  select(H4, H4_flt, everything())
+```
+
+Let's compare the coloc H4 values for the filtered and unfiltered sumstats. We would like them to be highly similar.
+
+```{r}
+ggplot(df, aes(x=H4, y=H4_flt)) +
+  geom_point(alpha=0.6) +
+  xlab("H4 - full sumstats") +
+  ylab("H4 - filtered") +
+  ggtitle("H4 value comparison")
+cor(df$H4, df$H4_flt, use = 'pairwise.complete.obs')
+
+```
+
+Unfortunately, a significant fraction of the time, the H4 values computed from filtered sumstats are over-estimated. Presumably this happens because SNPs that were filtered out in one dataset (p > 0.05) had significant p-values in the other dataset, and this would have been informative regarding lack of colocalisation.
+
+This experiment involved filtering sumstats in each dataset separately to those with p < 0.05. But the ideal approach would be to filter for cases where p < 0.05 in at least ONE of the datasets. But unfortunately, doing it on a pairwise basis would remove most of the benefit, since you then still have to load full sumstats for each pair.
+
+Therefore, it seems that the approach of pre-filtering sumstats individually will not be a useful optimisation.

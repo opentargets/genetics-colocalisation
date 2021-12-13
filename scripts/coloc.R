@@ -38,9 +38,10 @@ left_data = list(
                  pvalues=left_ss$pval,
                  N=left_n,
                  MAF=sapply(left_ss$eaf, eaf_to_maf),
-                 type=left_type,
-                 s=left_prop
-               )
+                 type=left_type)
+if (left_type == 'cc') {
+  left_data$s=left_prop
+}
 
 # Make coloc dataset (right)
 right_n = right_ss[1, 'n_total']
@@ -52,9 +53,11 @@ right_data = list(
                  pvalues=right_ss$pval,
                  N=right_n,
                  MAF=sapply(right_ss$eaf, eaf_to_maf),
-                 type=right_type,
-                 s=right_prop
+                 type=right_type
                )
+if (right_type == 'cc') {
+  right_data$s=right_prop
+}
 
 
 # # Make coloc dataset (right). Use left_ss's maf if right has no maf
