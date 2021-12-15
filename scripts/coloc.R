@@ -34,13 +34,21 @@ left_ncases = left_ss[1, 'n_cases']
 left_ncases = min(left_ncases, (left_n - left_ncases))
 left_prop = left_ncases / left_n
 left_type = ifelse(as.character(left_ss[1, 'is_cc']) == 'True', 'cc', 'quant')
+# If beta/se columns are available, use them
 left_data = list(
-                 pvalues=left_ss$pval,
-                 N=left_n,
-                 MAF=sapply(left_ss$eaf, eaf_to_maf),
-                 type=left_type,
-                 s=left_prop
+                 N = left_n,
+                 MAF = sapply(left_ss$eaf, eaf_to_maf),
+                 type = left_type
                )
+if ('beta' %in% colnames(left_ss) && 'se' %in% colnames(left_ss)) {
+  left_data$beta = left_ss$beta
+  left_data$varbeta = left_ss$se^2
+} else {
+  left_data$pvalues = left_ss$pval
+}
+if (left_type == 'cc') {
+  left_data$s = left_prop
+}
 
 # Make coloc dataset (right)
 right_n = right_ss[1, 'n_total']
@@ -49,13 +57,19 @@ right_ncases = min(right_ncases, (right_n - right_ncases))
 right_prop = right_ncases / right_n
 right_type = ifelse(as.character(right_ss[1, 'is_cc']) == 'True', 'cc', 'quant')
 right_data = list(
-                 pvalues=right_ss$pval,
                  N=right_n,
                  MAF=sapply(right_ss$eaf, eaf_to_maf),
-                 type=right_type,
-                 s=right_prop
+                 type=right_type
                )
-
+if ('beta' %in% colnames(right_ss) && 'se' %in% colnames(right_ss)) {
+  right_data$beta = right_ss$beta
+  right_data$varbeta = right_ss$se^2
+} else {
+  right_data$pvalues = right_ss$pval
+}
+if (right_type == 'cc') {
+  right_data$s=right_prop
+}
 
 # # Make coloc dataset (right). Use left_ss's maf if right has no maf
 # right_n = right_ss[1, 'n_samples'] #* 10
@@ -69,9 +83,10 @@ right_data = list(
 #                 )
 
 # Run coloc
-coloc_res = coloc.abf(left_data, right_data,
-                     MAF=left_ss$maf,
-                     p1=1e-04, p2=1e-04, p12 = 1e-05)
+coloc_res = coloc.abf(left_data,
+                      right_data,
+                      MAF = left_ss$maf,
+                      p1 = 1e-04, p2 = 1e-04, p12 = 1e-05)
 
 # Output coloc result
 coloc_summ = data.frame(coloc_res$summary)
