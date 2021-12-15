@@ -181,8 +181,8 @@ gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/210923/credset $DAT
 # The previous coloc file is used to avoid repeating coloc tests that were already done.
 # The "raw" file is best for this, since the "processed" one could have had some tests removed already.
 # But either would work.
-gsutil -m cp -r gs://genetics-portal-staging/coloc/190601/coloc_raw.parquet $DATADIR/
-gsutil -m cp -r gs://genetics-portal-staging/coloc/190601/coloc_processed.parquet $DATADIR/
+gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/210927/coloc_raw.parquet $DATADIR/
+gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/210927/coloc_processed.parquet $DATADIR/
 
 python partition_top_loci_by_chrom.py # Script from fine-mapping pipeline
 ```
@@ -268,13 +268,13 @@ Each comparison took on average ~70 seconds. On 60 cores, this completes in abou
 ```
 # Combine the results of all the individual analyses
 # This step can be slow/inefficient due to Hadoop many small files problem
-export PYSPARK_SUBMIT_ARGS="--driver-memory 50g pyspark-shell"
+export PYSPARK_SUBMIT_ARGS="--driver-memory 150g pyspark-shell"
 time python 5_combine_results.py
 
 # Process the results for exporting. Renames or computes a few columns,
 # e.g. coloc_h4_h3 ratio, filters based on number of overlapping vars,
 # makes symmetric coloc result matrix.
-python 6_process_results.py
+time python 6_process_results.py
 
 python 7_merge_previous_results.py
 
