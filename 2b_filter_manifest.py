@@ -51,7 +51,7 @@ def main():
     }
     manifest_unfiltered = pd.read_json(in_manifest, orient='records', lines=True, dtype=manifest_dtypes)
 
-    if not config['coloc_table']:
+    if not 'coloc_table' in config:
         manifest_filtered = manifest_unfiltered
     else:
         # Read table of completed coloc tests
