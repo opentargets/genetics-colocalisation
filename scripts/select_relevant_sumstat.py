@@ -25,7 +25,10 @@ def main(args):
 
     # Start logging
     logger.info('Started selecting relevant sumstats')
-
+    
+    # write args to logger
+    logger.info('Args: {}'.format(args))
+    
     if args.ld is None:
         # No conditional analysis - just extract sumstats
         logger.info('Loading sumstats for {0}kb window'.format(
@@ -68,6 +71,7 @@ def main(args):
             orient='records',
             lines=True
         )
+        top_loci = top_loci.astype({"chrom": str})
 
         # Make variant ID
         varid = ':'.join([str(x) for x in [
@@ -95,7 +99,9 @@ def main(args):
                 varid,
                 args.chrom,
                 cond_list,
-                logger=logger)
+                logger=logger,
+                split_ld=args.split_ld,
+                var_pos=args.pos)
             logger.info('Finished conditioning, {} variants remain'.format(
                 sumstat_cond.shape[0]))
             # Copy the conditional stats into the original positions
@@ -164,6 +170,9 @@ def parse_args_or_fail():
     p.add_argument('--ld',
                    help=("LD plink reference"),
                    metavar="<str>", type=str, required=True)
+    p.add_argument('--split_ld',
+                   help=("Assume LD reference has been split into subsets based on coordinates"),
+                   action='store_true')
     p.add_argument('--study',
                    help=("study_id"),
                    metavar="<str>", type=str, required=True)

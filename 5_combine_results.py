@@ -68,7 +68,17 @@ def main():
     )
 
     # Load
-    df = spark.read.option('basePath', in_res_dir).json(in_res_dir, schema=res_schema)
+#    df = spark.read.option('basePath', in_res_dir).json(in_res_dir, schema=res_schema)
+    df = spark.read.option('basePath', in_res_dir).option("header", True).csv(in_res_dir, schema=res_schema)
+
+    df = (
+        df.withColumnRenamed('PP.H0.abf', 'coloc_h0')
+        .withColumnRenamed('PP.H1.abf', 'coloc_h1')
+        .withColumnRenamed('PP.H2.abf', 'coloc_h2')
+        .withColumnRenamed('PP.H3.abf', 'coloc_h3')
+        .withColumnRenamed('PP.H4.abf', 'coloc_h4')
+        .withColumnRenamed('nsnps', 'coloc_n_vars')
+    )
 
     # Repartition
     # df = (
@@ -77,7 +87,7 @@ def main():
     # )
 
     # Coalesce
-    df = df.coalesce(200)
+    df = df.coalesce(100)
     df.explain()
 
     # Write
@@ -88,6 +98,14 @@ def main():
             out_coloc,
             compression='snappy',
             mode='overwrite'
+        )
+    )
+    
+    (
+        df.toPandas().to_csv(
+            '/output/coloc_raw.csv.gz',
+            index=False,
+            compression='gzip'
         )
     )
 

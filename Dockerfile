@@ -65,6 +65,12 @@ RUN apt-get -y install libxml2-dev libssl-dev libcurl4-openssl-dev
 RUN Rscript -e "install.packages('BiocManager', dependencies=TRUE, repos='http://cran.rstudio.com/')" -e "BiocManager::install(c('snpStats'))"
 RUN R -e "install.packages('coloc', dependencies=TRUE, repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('tidyverse', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('R.utils', dependencies=TRUE, repos='http://cran.rstudio.com/')"
+
+# Install plink
+RUN wget https://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20210606.zip --no-check-certificate -P /software/plink
+RUN unzip /software/plink/plink_linux_x86_64_20210606.zip -d /software/plink
+ENV PATH="/software/plink:${PATH}"
 
 # Copy project to its own coloc directory
 COPY ./ /coloc

@@ -9,7 +9,7 @@ import os
 import pandas as pd
 
 def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
-        chrom, condition_on, logger=None):
+        chrom, condition_on, logger=None, split_ld=False, var_pos=None):
     ''' Uses GCTA-cojo to perform conditional analysis
     Args:
         sumstats (pd.df)
@@ -18,6 +18,8 @@ def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
         index_var (str)
         chrom (str)
         condition_on (list): list of variants to condition on
+        split_ld (bool): whether to use split LD files or not
+        var_pos (int): needed if split_ld is True: integer position of index_var
     Return:
         pd.df of conditionally adjusted summary stats
     '''
@@ -42,16 +44,36 @@ def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
     # Write a conditional list
     write_cond_list(condition_on, gcta_cond)
 
+    # Construct LD file path
+    ld_file = in_plink.format(chrom=chrom)
+    if split_ld:
+        # We assume that the LD file per chromosome has been split into 3-Mb chunks
+        window_size = int(3e6)
+        MB_pos = max(1, int(var_pos / 1e6))
+        def get_ld_fname(MB_pos):
+            window_start = int(MB_pos * 1e6 - 1e6)
+            window_end = int(window_start + window_size)
+            return(in_plink.format(chrom=chrom) + '.{:d}_{:d}'.format(window_start, window_end))
+        ld_file = get_ld_fname(MB_pos)
+        # Check that the LD file exists
+        if not os.path.exists(ld_file + ".bim"):
+            # If not, try the previous window, as we may be near the chromosome end
+            ld_file = get_ld_fname(MB_pos - 1)
+            if not os.path.exists(ld_file + ".bim"):
+                ld_file = get_ld_fname(MB_pos - 2)
+
     # Constuct command
     cmd =  [
-        'gcta64 --bfile {0}'.format(in_plink.format(chrom=chrom)),
+        'gcta64 --bfile {0}'.format(ld_file),
         '--chr {0}'.format(chrom),
         '--extract {0}'.format(gcta_snplist),
         '--cojo-file {0}'.format(gcta_in),
         '--cojo-cond {0}'.format(gcta_cond),
         '--out {0}'.format(gcta_out)
     ]
-
+    if logger:
+        logger.info('  GCTA command: {}'.format(' '.join(cmd)))
+    
     # Run command
     fnull = open(os.devnull, 'w')
     cp = sp.run(' '.join(cmd), shell=True, stdout=fnull, stderr=sp.STDOUT)
