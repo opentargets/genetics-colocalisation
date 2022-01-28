@@ -45,6 +45,7 @@ def load_sumstats(in_pq, study_id, phenotype_id=None, bio_feature=None,
     df = dd.read_parquet(in_pq,
                          columns=cols_to_keep,
                          filters=row_grp_filters,
+                         split_row_groups=True,
                          engine='fastparquet')
 
     # Conversion to in-memory pandas
@@ -52,6 +53,7 @@ def load_sumstats(in_pq, study_id, phenotype_id=None, bio_feature=None,
     
     # Make sure that chrom is str
     df['chrom'] = df['chrom'].astype('str')
+    #df['chrom'] = str(chrom)
 
     # Apply row filters
     if study_id:

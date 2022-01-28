@@ -32,8 +32,8 @@ def main():
     spark = (
         pyspark.sql.SparkSession.builder
         .config("spark.master", "local[*]")
-        .config("spark.driver.memory", "10g")
-        .config("spark.executor.memory", "2g")
+        .config("spark.driver.memory", "20g")
+        .config("spark.executor.memory", "20g")
         .getOrCreate()
     )
     # sc = spark.sparkContext
@@ -58,11 +58,6 @@ def main():
     # Rename and calc new columns 
     df = (
         df.withColumnRenamed('PP.H0.abf', 'coloc_h0')
-        .withColumnRenamed('PP.H1.abf', 'coloc_h1')
-        .withColumnRenamed('PP.H2.abf', 'coloc_h2')
-        .withColumnRenamed('PP.H3.abf', 'coloc_h3')
-        .withColumnRenamed('PP.H4.abf', 'coloc_h4')
-        .withColumnRenamed('nsnps', 'coloc_n_vars')
         .withColumn('coloc_h4_h3', (col('coloc_h4') / col('coloc_h3')))
         .withColumn('coloc_log2_h4_h3', log2(col('coloc_h4_h3')))
     )
@@ -176,7 +171,7 @@ def main():
 
     # Repartition
     df = (
-        df.repartitionByRange('left_chrom', 'left_pos')
+        df.repartitionByRange(100, 'left_chrom', 'left_pos')
         .sortWithinPartitions('left_chrom', 'left_pos')
     )
 

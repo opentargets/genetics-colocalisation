@@ -13,8 +13,8 @@ def main(args):
 
     in_manifest = '/configs/manifest.json.gz'
     out_manifest = '/configs/coloc_manifest.json.gz'
-    out_todo = '/configs/commands_todo.txt.gz'
-    out_done = '/configs/commands_done.txt.gz'
+    out_todo = '/configs/commands_todo.cond.txt.gz'
+    out_done = '/configs/commands_done.cond.txt.gz'
     cache_folder = '/output/cache/'
     logs_folder = '/output/logs/extract_sumstats'
     os.makedirs(cache_folder, exist_ok=True)
@@ -54,6 +54,7 @@ def main(args):
                     os.path.abspath(prepare_script),
                     '--sumstat', os.path.abspath(rec['left_sumstats']),
                     '--ld', ld,
+                    '--split_ld',
                     '--study', rec['left_study_id'],
                     '--phenotype', rec['left_phenotype_id'],
                     '--bio_feature', rec['left_bio_feature'],
@@ -93,6 +94,7 @@ def main(args):
                     os.path.abspath(prepare_script),
                     '--sumstat', os.path.abspath(rec['right_sumstats']),
                     '--ld', ld,
+                    '--split_ld',
                     '--study', rec['right_study_id'],
                     '--phenotype', rec['right_phenotype_id'],
                     '--bio_feature', rec['right_bio_feature'],

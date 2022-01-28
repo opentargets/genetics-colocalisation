@@ -95,7 +95,7 @@ def main():
                 out_record['method'] = 'conditional'
 
                 left_right_hive_partition_dirs = construct_left_right_hive_partition_dirs(in_record)
-                out_record['out'] = os.path.join(data_out, 'data', left_right_hive_partition_dirs, 'coloc_res.json.gz')
+                out_record['out'] = os.path.join(data_out, 'data', left_right_hive_partition_dirs, 'coloc_res.csv')
                 out_record['log'] = os.path.join(data_out, 'logs', 'coloc', left_right_hive_partition_dirs, 'log_file.txt')
                 out_record['tmpdir'] = os.path.join(data_out, 'tmp', left_right_hive_partition_dirs)
                 out_record['plot'] = os.path.join(data_out, 'plot', left_right_hive_partition_dirs, 'plot.png')

@@ -54,10 +54,17 @@ def main():
     if not 'coloc_table' in config:
         manifest_filtered = manifest_unfiltered
     else:
+        print("Filtering out coloc tests already present in the main coloc table {0}".format(config['coloc_table']))
         # Read table of completed coloc tests
         coloc_table = pd.read_parquet(config['coloc_table'], columns=list(shared_cols_dict.keys()))
         coloc_table.rename(columns=shared_cols_dict, inplace=True)
         
+        # Ensure that both tables represent "None" in the same way
+        coloc_table.loc[coloc_table['left_phenotype_id'] == "None", 'left_phenotype_id'] = None
+        coloc_table.loc[coloc_table['left_bio_feature'] == "None", 'left_bio_feature'] = None
+        coloc_table.loc[coloc_table['right_phenotype_id'] == "None", 'right_phenotype_id'] = None
+        coloc_table.loc[coloc_table['right_bio_feature'] == "None", 'right_bio_feature'] = None
+
         manifest_unfiltered.loc[manifest_unfiltered['left_phenotype_id'] == "None", 'left_phenotype_id'] = None
         manifest_unfiltered.loc[manifest_unfiltered['left_bio_feature'] == "None", 'left_bio_feature'] = None
         manifest_unfiltered.loc[manifest_unfiltered['right_phenotype_id'] == "None", 'right_phenotype_id'] = None

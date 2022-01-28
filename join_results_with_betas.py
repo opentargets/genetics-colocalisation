@@ -18,8 +18,7 @@ import pyspark.sql
 from pyspark.sql import Window
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
-import sys
-import os
+
 
 def main():
 
@@ -34,9 +33,10 @@ def main():
     print('Spark version: ', spark.version)
 
     # File args (dataproc)
-    in_parquet = 'gs://genetics-portal-dev-staging/coloc/210927/coloc_processed.parquet'
+    in_parquet = 'gs://genetics-portal-dev-staging/coloc/220127/coloc_processed.parquet'
     in_sumstats = 'gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb_union'
-    out_parquet = 'gs://genetics-portal-dev-staging/coloc/210927/coloc_processed_w_betas_new.parquet'
+    out_parquet = 'gs://genetics-portal-dev-staging/coloc/220127/coloc_processed_w_betas.parquet'
+    out_dups = 'gs://genetics-portal-dev-staging/coloc/220127/coloc_processed_w_betas_dups.parquet'
     
     # # File args (local)
     # in_parquet = '/home/ubuntu/results/coloc/results/coloc_processed.parquet'
@@ -125,7 +125,7 @@ def main():
     (
         dups
         .write.parquet(
-            'gs://genetics-portal-dev-staging/coloc/210927/coloc_processed_w_betas_dups.parquet',
+            out_dups,
             mode='overwrite'
         )
     )
@@ -140,7 +140,7 @@ def main():
 
     # Repartition
     merged = (
-        merged.repartitionByRange('left_chrom', 'left_pos')
+        merged.repartitionByRange(100, 'left_chrom', 'left_pos')
         .sortWithinPartitions('left_chrom', 'left_pos')
     )
 
