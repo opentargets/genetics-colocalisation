@@ -74,13 +74,13 @@ do_coloc = function(in_left_ss, in_right_ss, outfile, logfile) {
   left_ncases = left_ss$n_cases[1]
   left_ncases = min(left_ncases, (left_n - left_ncases))
   left_prop = left_ncases / left_n
-  left_type = ifelse(as.character(left_ss$is_cc[1]) == 'True', 'cc', 'quant')
+  left_type = ifelse(left_ss$is_cc[1] == TRUE, 'cc', 'quant')
   
   right_n = right_ss$n_total[1]
   right_ncases = right_ss$n_cases[1]
   right_ncases = min(right_ncases, (right_n - right_ncases))
   right_prop = right_ncases / right_n
-  right_type = ifelse(as.character(right_ss$is_cc[1]) == 'True', 'cc', 'quant')
+  right_type = ifelse(right_ss$is_cc[1] == TRUE, 'cc', 'quant')
   
   # Subset to relevant columns
   if ('beta' %in% colnames(left_ss) && 'se' %in% colnames(left_ss)) {
