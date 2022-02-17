@@ -50,15 +50,15 @@ def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
         # We assume that the LD file per chromosome has been split into 3-Mb chunks
         window_size = int(3e6)
         MB_pos = max(1, int(var_pos / 1e6))
-        def get_ld_fname(MB_pos):
+        def get_ld_fname(basefname, MB_pos):
             window_start = int(MB_pos * 1e6 - 1e6)
             window_end = int(window_start + window_size)
-            return(in_plink.format(chrom=chrom) + '.{:d}_{:d}'.format(window_start, window_end))
-        ld_file = get_ld_fname(MB_pos)
+            return(basefname + '.{:d}_{:d}'.format(window_start, window_end))
+        ld_file = get_ld_fname(ld_file, MB_pos)
         # Check that the LD file exists
         if not os.path.exists(ld_file + ".bim"):
             # If not, try the previous window, as we may be near the chromosome end
-            ld_file = get_ld_fname(MB_pos - 1)
+            ld_file = get_ld_fname(ld_file, MB_pos - 1)
             if not os.path.exists(ld_file + ".bim"):
                 ld_file = get_ld_fname(MB_pos - 2)
 
