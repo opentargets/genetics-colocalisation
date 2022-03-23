@@ -51,9 +51,19 @@ def load_sumstats(in_pq, study_id, phenotype_id=None, bio_feature=None,
     # Conversion to in-memory pandas
     df = df.compute(scheduler='single-threaded')
     
+    if logger:
+        logger.info('    Dask read in {0} variants'.format(df.shape[0]))
+
     # Make sure that chrom is str
     df['chrom'] = df['chrom'].astype('str')
     #df['chrom'] = str(chrom)
+
+    # Print first few rows of df
+    if logger:
+        logger.info('    First few rows of Dask df:')
+        logger.info(df.head())
+        logger.info('    Last few rows of Dask df:')
+        logger.info(df.tail())
 
     # Apply row filters
     if study_id:
@@ -68,6 +78,9 @@ def load_sumstats(in_pq, study_id, phenotype_id=None, bio_feature=None,
         df = df.loc[df['pos'] >= start, :]
     if end:
         df = df.loc[df['pos'] <= end, :]
+
+    if logger:
+        logger.info('    ...{0} variants after row filters'.format(df.shape[0]))
 
     #
     # Make exclusions

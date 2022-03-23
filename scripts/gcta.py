@@ -50,17 +50,7 @@ def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
         # We assume that the LD file per chromosome has been split into 3-Mb chunks
         window_size = int(3e6)
         MB_pos = max(1, int(var_pos / 1e6))
-        def get_ld_fname(basefname, MB_pos):
-            window_start = int(MB_pos * 1e6 - 1e6)
-            window_end = int(window_start + window_size)
-            return(basefname + '.{:d}_{:d}'.format(window_start, window_end))
-        ld_file = get_ld_fname(ld_file, MB_pos)
-        # Check that the LD file exists
-        if not os.path.exists(ld_file + ".bim"):
-            # If not, try the previous window, as we may be near the chromosome end
-            ld_file = get_ld_fname(ld_file, MB_pos - 1)
-            if not os.path.exists(ld_file + ".bim"):
-                ld_file = get_ld_fname(MB_pos - 2)
+        ld_file = get_ld_fname(ld_file, MB_pos, window_size)
 
     # Constuct command
     cmd =  [
@@ -101,6 +91,25 @@ def perform_conditional_adjustment(sumstats, in_plink, temp_dir, index_var,
             sumstat_cond[col] = None
 
     return sumstat_cond
+
+
+def get_ld_fname(ld_file, MB_pos, window_size):
+    ''' Determine the "split" LD file name, given the base (chromosome-level) name of an LD file,
+        and check that it exists.
+    '''
+    def make_ld_fname(basefname, MB_pos):
+        window_start = int(MB_pos * 1e6 - 1e6)
+        window_end = int(window_start + window_size)
+        return(basefname + '.{:d}_{:d}'.format(window_start, window_end))
+
+    ld_fname = make_ld_fname(ld_file, MB_pos)
+    # Check that the LD file exists
+    if not os.path.exists(ld_fname + ".bim"):
+        # If not, try the previous window, as we may be near the chromosome end
+        ld_fname = make_ld_fname(ld_file, MB_pos - 1)
+        if not os.path.exists(ld_fname + ".bim"):
+            ld_fname = make_ld_fname(ld_file, MB_pos - 2)
+    return ld_fname
 
 def read_error_from_gcta_log(log_file):
     ''' Reads a GCTA log file and returns lines containing the word "error"

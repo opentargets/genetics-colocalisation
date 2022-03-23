@@ -18,6 +18,10 @@ This pipeline runs using Docker.
 
 ### Running the pipeline
 
+Make sure to create a machine with a large enough disk to store the number of files/folders needed. GCP disks have some limits that we've run into:
+https://cloud.google.com/filestore/docs/limits#number_of_files
+Based on the way files are saved, each conditionally independent sumstat signal requires about 50 folders. (Previously we had ~50 folders for each coloc test, but this has been fixed. Use df -T and df -i to check limits and usage.)
+
 #### Step 1: Prepare docker
 ```bash
 # If docker is not installed, then install (on Ubuntu) following steps here.
@@ -57,26 +61,12 @@ mkdir -p $DATADIR/ukb_v3_downsampled10k
 mkdir -p $DATADIR/filtered/significant_window_2mb/gwas
 mkdir -p $DATADIR/filtered/significant_window_2mb/molecular_trait
 
-# If on same machine as fine-mapping pipeline, then the following:
-mv $HOME/genetics-finemapping/data/ukb_v3_downsampled10k $DATADIR/ukb_v3_downsampled10k
-
-for f in ~/genetics-finemapping/data/filtered/significant_window_2mb/*/gwas/*.parquet; do
-  fname=`basename $f`
-  echo $DATADIR/filtered/significant_window_2mb/gwas/$fname
-  mv $f $DATADIR/filtered/significant_window_2mb/gwas/$fname
-done
-
-for f in ~/genetics-finemapping/data/filtered/significant_window_2mb/*/molecular_trait/*.parquet; do
-  fname=`basename $f`
-  echo $DATADIR/filtered/significant_window_2mb/molecular_trait/$fname
-  mv $f $DATADIR/filtered/significant_window_2mb/molecular_trait/$fname
-done
-
-
-# Otherwise, this:
+# If not on the same machine as fine-mapping pipeline, then set up LD panel
 gsutil -m rsync gs://open-targets-ukbb/genotypes/ukb_v3_downsampled10k/ $DATADIR/ukb_v3_downsampled10k/
-gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas/*.parquet $DATADIR/filtered/significant_window_2mb/gwas/
-gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/molecular_trait/*.parquet $DATADIR/filtered/significant_window_2mb/molecular_trait/
+
+# Copy down significant windows
+gsutil -m rsync -r -x '.*_SUCCESS$' gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/gwas/ $DATADIR/filtered/significant_window_2mb/gwas/
+gsutil -m rsync -r -x '.*_SUCCESS$' gs://genetics-portal-dev-sumstats/filtered/significant_window_2mb/molecular_trait/ $DATADIR/filtered/significant_window_2mb/molecular_trait/
 
 # Note, need to delete files named "_SUCCESS" from within all parquet folders,
 # since the dask dataframe seems to choke on this when reading the parquet.
@@ -84,17 +74,17 @@ gsutil -m cp -r gs://genetics-portal-dev-sumstats/filtered/significant_window_2m
 find $DATADIR -name "*_SUCCESS" | wc -l
 find $DATADIR -name "*_SUCCESS" -delete
 
-# Update to the latest fine-mapping path before running
 mkdir -p $DATADIR/finemapping
-gsutil -m cp gs://genetics-portal-dev-staging/finemapping/211221_merged/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
-gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/211221_merged/credset $DATADIR/finemapping/
+# NOTE: Should update to the latest fine-mapping path before running
+gsutil -m cp gs://genetics-portal-dev-staging/finemapping/220228_merged/top_loci.json.gz $DATADIR/finemapping/top_loci.json.gz
+gsutil -m cp -r gs://genetics-portal-dev-staging/finemapping/220228_merged/credset $DATADIR/finemapping/
 
 # Update to the path to the previous coloc release before running
 # The previous coloc file is used to avoid repeating coloc tests that were already done.
 # The "raw" file is best for this, since the "processed" one could have had some tests removed already.
 # But either would work.
-gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/211215_merged/coloc_raw.parquet $DATADIR/
-gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/211215_merged/coloc_processed.parquet $DATADIR/
+gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/220127/coloc_raw.parquet $DATADIR/
+gsutil -m cp -r gs://genetics-portal-dev-staging/coloc/220127/coloc_processed.parquet $DATADIR/
 
 # If you are filtering out coloc tests that were previously done (not re-running them)
 # then make sure that the path to the coloc_raw.parquet file is specified in config.yaml.
@@ -105,7 +95,8 @@ After downloading the data, we need to split the top loci by chromosome, and sub
 ```
 tmux
 
-#docker build --tag otg-coloc .
+# Update docker container if any code has changed
+docker build --tag otg-coloc .
 
 # Run docker container. Can then run steps in run_coloc_pipeline_opt.sh individually.
 docker run -it --rm \
@@ -117,6 +108,7 @@ docker run -it --rm \
 
 python partition_top_loci_by_chrom.py # Script from fine-mapping pipeline
 
+# (Only needed if not on same machine as fine-mapping pipeline and already split.)
 # To optimise the GCTA conditioning step, it helps to split the UKB reference panel
 # into smaller, overlapping "sub-panels". This is because (I believe) GCTA loads
 # in the index for the whole chromosome (*.bim file) to determine which SNPs match.
@@ -129,9 +121,12 @@ Start docker as above, and then either manually run individual commands in run_c
 
 ```
 # Set number of cores available to use, and pyspark args
+# May need to scale memory relative to number of cores
 # Last run on full dataset (~4 M colocs) took 28 hrs on a 224-core machine.
-NCORES=222
-PYSPARK_SUBMIT_ARGS="--driver-memory 400g pyspark-shell"
+NCORES=95
+export PYSPARK_SUBMIT_ARGS="--driver-memory 100g pyspark-shell --executor-memory 2g pyspark-shell"
+#NCORES=31
+#export PYSPARK_SUBMIT_ARGS="--driver-memory 50g --executor-memory 2g pyspark-shell"
 
 # Run the full pipeline (or alternatively, run individual commands from this script)
 dt=`date '+%Y_%m_%d.%H_%M'`
@@ -139,6 +134,7 @@ time bash run_coloc_pipeline_opt.sh $NCORES "$PYSPARK_SUBMIT_ARGS" | tee /output
 
 # Exit tmux with Ctrl+b then d
 ```
+
 
 #### Step 4: Monitor running pipeline
 
@@ -160,11 +156,11 @@ echo "$MIN_LEFT min left"
 
 # Check how many coloc jobs have completed
 cat $HOME/output/parallel.jobs.coloc.log | wc -l
-JOBS_DONE=`cat $HOME/output/parallel.jobs.coloc_opt.log | wc -l`
-JOBS_TOTAL=`zcat $HOME/configs/commands_todo.txt.gz | wc -l`
-TIME_START=`head -n 2 $HOME/output/parallel.jobs.coloc_opt.log | cut -f 3 | tail -n 1`
-TIME_END=`tail -n 1 $HOME/output/parallel.jobs.coloc_opt.log | cut -f 3`
-PCT_DONE=`echo "scale=3; 100 * 1000 * $JOBS_DONE / $JOBS_TOTAL" | bc`
+JOBS_DONE=`cat $HOME/output/parallel.jobs.coloc.log | wc -l`
+JOBS_TOTAL=`cat $HOME/configs/commands_todo_coloc_opt.txt | wc -l`
+TIME_START=`head -n 2 $HOME/output/parallel.jobs.coloc.log | cut -f 3 | tail -n 1`
+TIME_END=`tail -n 1 $HOME/output/parallel.jobs.coloc.log | cut -f 3`
+PCT_DONE=`echo "scale=3; 100 * $JOBS_DONE / $JOBS_TOTAL" | bc`
 echo "$PCT_DONE% done"
 MIN_LEFT=`echo "scale=3; ($TIME_END - $TIME_START) * ((100.0 / $PCT_DONE) - 1) / 60" | bc`
 echo "$MIN_LEFT min left"
@@ -180,6 +176,7 @@ python 7_merge_previous_results.py
 
 #### Step 6: Copy to GCS
 ```
+# Update README text in the following script first
 bash 8_copy_results_to_gcs.sh
 ```
 
@@ -256,21 +253,27 @@ find $HOME/output/logs -name "log_file.txt" -exec "Loading right" -A 1 {} \;
 time python 3a_make_conditioning_commands.py --quiet
 zcat $HOME/configs/commands_todo.txt.gz | wc -l
 
-# Grep all log files
-find $HOME/output/logs/coloc -name 'log_file.txt' -print0 | xargs -r0 grep -H 'ERROR' | tee errors.txt | wc -l
-find $HOME/output/logs -name 'log_file.txt' -print0 | xargs -r0 grep -H 'ERROR' | grep -v 'no intersection'
+# Check how many intermediate (conditioned) sumstat files generated
+find /output/cache/sqtl -name 'sumstat.tsv.gz' | wc -l
 
-# (OLD) Grep all log files
-ls -rt logs/left_study\=*/left_phenotype\=*/left_bio_feature\=*/left_variant\=*/right_study\=*/right_phenotype\=*/right_bio_feature\=*/right_variant\=*/log_file.txt | xargs grep "Time taken"
+# Grep all log files
+find output/logs/extract_sumstats -name 'log_file.txt' -print0 | xargs -r0 grep -iH 'ERROR' | tee cond_errors.txt | wc -l
+find /output/logs/extract_sumstats -name 'log_file.txt' -print0 | xargs -r0 grep -iH 'ERROR' | less
+find output/logs/coloc -name 'log_file.txt' -print0 | xargs -r0 grep -iH 'ERROR' | tee coloc_errors.txt | wc -l
+find $HOME/output/logs/coloc -name 'log_file.txt' -print0 | xargs -r0 grep -iH 'ERROR' | grep -v 'no intersection'
 
 # Cat all log files
-find $HOME/output/chr21_run3/logs/extract_sumstats -name "log_file.txt" -exec cat {} \; | less
-find $HOME/output/chr21_run3/logs/extract_sumstats -name "log_file.txt" -exec cat {} \; | grep '/output/cache/gwas/GCST90002334/None/None/21/38479032/C/A/sumstat.tsv' | less
+find /output/logs/extract_sumstats -name "log_file.txt" -exec cat {} \; | less
+find output/logs/coloc -name "log_file.txt" -exec cat {} \; | less
 
-find $HOMEoutput/cache -name "sumstat.tsv.gz" -exec ls -l {} \; | less
+find /output/cache -name "sumstat.tsv.gz" -exec ls -l {} \; | less
 
-find $HOME/output/logs/extract_sumstats -name "log_file.txt" -exec cat {} \; | less
-find $HOME/output/logs/coloc -name "log_file.txt" -exec cat {} \; | grep -i "error" | less
+find /output/logs/extract_sumstats -name "log_file.txt" -exec cat {} \; | grep -i "error" | less
+find /output/logs/coloc -name "log_file.txt" -exec cat {} \; | grep -i "error" | less
+
+find output/logs/coloc -name "coloc_log*.txt" -exec cat {} \; | grep -i "error" | less
+
+coloc_log.6814.txt
 ```
 
 ##### Miscellaneous
