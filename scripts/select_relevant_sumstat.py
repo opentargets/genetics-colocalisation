@@ -15,14 +15,33 @@ import os
 import utils as coloc_utils
 import gcta as coloc_gcta
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(logging.Formatter('%(asctime)s - %(process)d - %(filename)s - %(levelname)s - %(message)s'))
-logger.addHandler(handler)
 
-def main(args):
+def main():
+    
+    logger = None
+    # Catch any exceptions and log them
+    try:
+        args = parse_args_or_fail()
 
+        # Make path for log file output
+        os.makedirs(os.path.dirname(args.log), exist_ok=True)
+        logger = make_logger(args.log)
+
+        if os.path.exists(args.out):
+            logger.error("The output file {} exists already. If you want to regenerate the file you have to remove it first.".format(args.out))
+            sys.exit(1)
+
+        logger.debug('Making sure {} folder exist.'.format(args.out))
+        os.makedirs(os.path.dirname(args.out), exist_ok=True)
+        get_conditioned_sumstats(args, logger)
+
+    except Exception as e:
+        if logger:
+            logger.exception(e)
+        raise e
+    
+
+def get_conditioned_sumstats(args, logger):
     # Start logging
     logger.info('Started selecting relevant sumstats')
     
@@ -44,6 +63,9 @@ def main(args):
             min_maf=args.min_maf,
             logger=logger)
         logger.info('Loaded {0} variants'.format(sumstat_wind.shape[0]))
+        if sumstat_wind.shape[0] < 1:
+            logger.error('No variants in the window')
+            sys.exit(1)
 
     else: # do conditional analysis
 
@@ -61,6 +83,9 @@ def main(args):
             min_maf=args.min_maf,
             logger=logger)
         logger.info('Loaded {0} variants'.format(sumstat.shape[0]))
+        if sumstat.shape[0] < 1:
+            logger.error('No variants in the window')
+            sys.exit(1)
 
         logger.info('Starting conditional analysis')
 
@@ -124,13 +149,9 @@ def main(args):
         logger.info('{} variants remain'.format(sumstat_wind.shape[0]))
 
     # Write sumstat file
-    sumstat_wind.to_csv(output_file_path(args), sep='\t', index=None, compression='gzip')
+    sumstat_wind.to_csv(args.out, sep='\t', index=None, compression='gzip')
 
-
-def output_file_path(args):
-    return args.out
-
-
+    
 def make_pandas_top_loci_query(study_id, phenotype_id=None,
                                bio_feature=None, chrom=None):
     ''' Creates query to extract top loci for specific study
@@ -217,6 +238,11 @@ def parse_args_or_fail():
     p.add_argument('--out',
                    help=("Directory to sumstat.tsv.gz file with relevant only data and args.json file"),
                    metavar="<str>", type=str, required=True)
+    # Add output file
+    p.add_argument('--log',
+                   help=("Path to log file output"),
+                   metavar="<str>", type=str, required=True)
+
     p.add_argument('--tmpdir',
                    metavar="<file>",
                    help=("Temp dir"),
@@ -237,12 +263,34 @@ def parse_args_or_fail():
     return args
 
 
+def make_logger(log_file):
+    ''' Creates a logging handle.
+    '''
+    # Basic setup
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S',
+        stream=None)
+
+    # Create formatter
+    logFormatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    rootLogger = logging.getLogger(__name__)
+
+    # Add file logging
+    fileHandler = logging.FileHandler(log_file, mode='w')
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+
+    # Add stdout logging
+    #consoleHandler = logging.StreamHandler()
+    #consoleHandler.setFormatter(logFormatter)
+    #rootLogger.addHandler(consoleHandler)
+
+    # Prevent logging from propagating to the root logger
+    rootLogger.propagate = 0
+
+    return rootLogger
+
+
 if __name__ == '__main__':
-    args = parse_args_or_fail()
-    ofp = output_file_path(args)
-    if os.path.exists(ofp):
-        logger.error("The output file {} exists already. If you want to regenerate the file you have to remove it first.".format(ofp))
-        sys.exit(1)
-    logger.debug('Making sure {} folder exist.'.format(args.out))
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    main(args)
+    main()

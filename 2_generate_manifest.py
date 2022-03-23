@@ -37,7 +37,7 @@ def main():
     data_out = '/output'
 
     # id column names to overlap table columns mapping
-    id_cols_mapping = {'study': 'study_id', 'type': 'type', 'phenotype': 'phenotype_id', 'bio_feature': 'bio_feature',
+    id_cols_mapping = {'study': 'study_id', 'type': 'type', 'bio_feature': 'bio_feature', 'phenotype': 'phenotype_id',
                    'chrom': 'lead_chrom', 'pos': 'lead_pos', 'ref': 'lead_ref', 'alt': 'lead_alt'}
     def construct_left_right_hive_partition_dirs(rec):
         dirs = []
@@ -54,7 +54,7 @@ def main():
             # Go through each overlap
             for in_record in in_h:
                 in_record = json.loads(in_record.decode())
-
+                
                 if custom_studies and in_record['left_study_id'] not in custom_studies and \
                         in_record['right_study_id'] not in custom_studies:
                     continue
@@ -121,6 +121,7 @@ def main():
                 out_h.write((json.dumps(out_record) + '\n').encode())
 
     return 0
+
 
 if __name__ == '__main__':
 

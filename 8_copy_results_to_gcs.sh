@@ -11,7 +11,7 @@ gsutil -m cp -r $HOME/output/coloc_processed.parquet gs://genetics-portal-dev-st
 gsutil -m cp -r $HOME/output/overlap_table gs://genetics-portal-dev-staging/coloc/$version_date/overlap_table
 
 # Make a note as to what this coloc run contained. E.g.:
-echo "Recomputed from scratch & fixed: Data for Genetics portal R7, with 6 pQTL studies added and 653 new GWAS" > README.txt
+echo "Recomputed from scratch: Data for Genetics portal R8, with GTEx-sQTL added and FinnGen R6" > README.txt
 gsutil cp README.txt gs://genetics-portal-dev-staging/coloc/$version_date/README.txt
 
 if [ -d "$HOME/output/merged" ]; then

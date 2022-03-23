@@ -26,9 +26,9 @@ def main():
         pyspark.sql.SparkSession.builder
         .config("spark.sql.files.ignoreCorruptFiles", "true")
         .config("spark.master", "local[*]")
-        .config("spark.driver.maxResultSize", "0")
-        .config("spark.driver.memory", "100g")
-        .config("spark.executor.memory", "2g")
+        #.config("spark.driver.maxResultSize", "80g")
+        #.config("spark.driver.memory", "150g")
+        #.config("spark.executor.memory", "2g")
         .getOrCreate()
     )
     print('Spark version: ', spark.version)
@@ -38,7 +38,7 @@ def main():
     # sc.setLogLevel('INFO')
 
     # Args
-    in_res_dir = '/output/data/'
+    in_res_dir = '/output/coloc/'
     out_coloc = '/output/coloc_raw.parquet'
 
     res_schema = (
@@ -49,18 +49,18 @@ def main():
         .add('PP.H2.abf', DoubleType(), False)
         .add('PP.H3.abf', DoubleType(), False)
         .add('PP.H4.abf', DoubleType(), False)
-        .add('left_study', StringType(), False)
         .add('left_type', StringType(), False)
-        .add('left_phenotype', StringType(), True)
+        .add('left_study', StringType(), False)
         .add('left_bio_feature', StringType(), True)
+        .add('left_phenotype', StringType(), True)
         .add('left_chrom', StringType(), False)
         .add('left_pos', IntegerType(), False)
         .add('left_ref', StringType(), False)
         .add('left_alt', StringType(), False)
-        .add('right_study', StringType(), False)
         .add('right_type', StringType(), False)
-        .add('right_phenotype', StringType(), True)
+        .add('right_study', StringType(), False)
         .add('right_bio_feature', StringType(), True)
+        .add('right_phenotype', StringType(), True)
         .add('right_chrom', StringType(), False)
         .add('right_pos', IntegerType(), False)
         .add('right_ref', StringType(), False)
@@ -79,7 +79,7 @@ def main():
         .withColumnRenamed('PP.H4.abf', 'coloc_h4')
         .withColumnRenamed('nsnps', 'coloc_n_vars')
     )
-
+    
     # Repartition
     # df = (
     #     df.repartitionByRange('left_chrom', 'left_pos')
@@ -87,7 +87,7 @@ def main():
     # )
 
     # Coalesce
-    df = df.coalesce(100)
+    df = df.coalesce(200)
     df.explain()
 
     # Write
@@ -101,6 +101,7 @@ def main():
         )
     )
     
+    # Somewhat slow - could fail if not enough memory on machine
     (
         df.toPandas().to_csv(
             '/output/coloc_raw.csv.gz',

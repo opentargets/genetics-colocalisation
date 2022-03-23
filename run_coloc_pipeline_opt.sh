@@ -9,22 +9,23 @@ echo "PYSPARK_SUBMIT_ARGS: $PYSPARK_SUBMIT_ARGS"
 
 #python partition_top_loci_by_chrom.py # Script from fine-mapping pipeline
 
-echo -e "\n1_find_overlaps.sh"
+#echo -e "\n1_find_overlaps.sh"
+# This step requires a lot of memory
 time /bin/bash 1_find_overlaps.sh # 10 min last run
 
 # Generate the manifest from the overlap table
 echo -e "\n2_generate_manifest.py"
-time python 2_generate_manifest.py # 
+time python 2_generate_manifest.py # ~24 min last run
 
-cp /configs/manifest_unfiltered.json.gz /configs/manifest_unfiltered.all.json.gz
+#cp /configs/manifest_unfiltered.json.gz /configs/manifest_unfiltered.all.json.gz
 
 # Subset to chr21 for testing
-#zcat /configs/manifest_unfiltered.all.json.gz | grep 'ukb_v3_chr21.downsampled10k' | gzip > /configs/manifest_unfiltered.json.gz
+#zcat /configs/manifest_unfiltered.all.json.gz | grep 'ukb_v3_chr21.downsampled10k' | head -n 10000 | gzip > /configs/manifest_unfiltered.json.gz
 
 # Remove lines which are already in output from previous coloc runs
 # (If no previous coloc, this just renames the file)
 echo -e "\n2b_filter_manifest.py"
-time python 2b_filter_manifest.py # This step may require a lot of memory (>60 G)
+time python 2b_filter_manifest.py
 
 # The script below generates commands to compute conditionally independent
 # sumstats with GCTA. It creates two files `commands_todo.cond.txt.gz` and
@@ -39,24 +40,23 @@ time python 2b_filter_manifest.py # This step may require a lot of memory (>60 G
 echo -e "\n3a_make_conditioning_commands.py"
 time python 3a_make_conditioning_commands.py --quiet
 
-# Took 22 hrs last run (222 cores, 400 Gb)
-echo -e "\nRunning conditioning commands in parallel"
-time zcat /configs/commands_todo.cond.txt.gz | shuf | parallel -j $NCORES --joblog /output/parallel.jobs.cond.log
-# --bar  # could use if running interactively and there aren't TOO many commands
-# Note that using --bar with parallel seems to slow it down massively, at least
-# when piping in 3.8 M commands, though it worked well with only thousands of
-# commands.
-
-
 # Creates `commands_todo_coloc_opt.txt`. Each command operates on a chunk of
-# `coloc_manifest_opt.txt.gz` written in the configs/commands_split directory.
+# `coloc_manifest_opt.todo.txt.gz` written in the configs/commands_split directory.
 echo -e "\n3b_make_coloc_commands_opt.sh"
 time bash 3b_make_coloc_commands_opt.sh
 
-# Took 100 min last run (222 cores, 400 Gb)
+############### Main conditioning step
+# Took 26 hrs last run (222 cores, 400 Gb)
+echo -e "\nRunning conditioning commands in parallel"
+time zcat /configs/commands_todo.cond.txt.gz | shuf | parallel -j $NCORES --joblog /output/parallel.jobs.cond.log | tee /output/run_gcta_cond.out.txt
+# Note: "--bar" can make things slower if there are millions of commands
+
+
+############### Main coloc step
+# Took ~ 2 hrs last run (222 cores), 6.8 M commands
 echo -e "\nRunning coloc commands in parallel"
-time cat /configs/commands_todo_coloc_opt.txt | parallel -j $NCORES --joblog /output/parallel.jobs.coloc.log | tee /output/run_coloc_opt.out.txt
-# --bar  # could use if running interactively and there aren't TOO many commands
+time cat /configs/commands_todo_coloc_opt.txt | parallel -j $NCORES --joblog /output/parallel.jobs.coloc.log --bar | tee /output/run_coloc_opt.out.txt
+# Note: "--bar" can make things slower if there are millions of commands
 
 # Combine the results of all the individual analyses
 # This step can be slow/inefficient due to Hadoop many small files problem
