@@ -5,6 +5,7 @@ version_date=`date +%y%m%d`
 
 # Copy current results
 gsutil -m cp -r $HOME/output/coloc_raw.parquet gs://genetics-portal-dev-staging/coloc/$version_date/
+gsutil -m cp -r $HOME/output/coloc_raw.csv.gz gs://genetics-portal-dev-staging/coloc/$version_date/
 gsutil -m cp -r $HOME/output/coloc_processed.parquet gs://genetics-portal-dev-staging/coloc/$version_date/
 
 # Copy overlap table

@@ -32,8 +32,6 @@ def main():
     spark = (
         pyspark.sql.SparkSession.builder
         .config("spark.master", "local[*]")
-        .config("spark.driver.memory", "20g")
-        .config("spark.executor.memory", "20g")
         .getOrCreate()
     )
     # sc = spark.sparkContext

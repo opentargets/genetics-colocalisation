@@ -59,9 +59,8 @@ time cat /configs/commands_todo_coloc_opt.txt | parallel -j $NCORES --joblog /ou
 # Note: "--bar" can make things slower if there are millions of commands
 
 # Combine the results of all the individual analyses
-# This step can be slow/inefficient due to Hadoop many small files problem
 echo -e "\n5_combine_results.py"
-time python 5_combine_results.py # Took ~3 hrs last run (222 cores, 400 Gb)
+time python 5_combine_results.py # Takes a few minutes
 
 # Process the results for exporting. Renames or computes a few columns,
 # e.g. coloc_h4_h3 ratio, filters based on number of overlapping vars,
