@@ -26,9 +26,6 @@ def main():
         pyspark.sql.SparkSession.builder
         .config("spark.sql.files.ignoreCorruptFiles", "true")
         .config("spark.master", "local[*]")
-        #.config("spark.driver.maxResultSize", "80g")
-        #.config("spark.driver.memory", "150g")
-        #.config("spark.executor.memory", "2g")
         .getOrCreate()
     )
     print('Spark version: ', spark.version)
@@ -88,7 +85,6 @@ def main():
 
     # Coalesce
     df = df.coalesce(200)
-    df.explain()
 
     # Write
     (
@@ -102,6 +98,7 @@ def main():
     )
     
     # Somewhat slow - could fail if not enough memory on machine
+    # This could be done in a more efficient way, using spark to coalesce
     (
         df.toPandas().to_csv(
             '/output/coloc_raw.csv.gz',

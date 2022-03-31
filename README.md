@@ -126,7 +126,7 @@ Start docker as above, and then either manually run individual commands in run_c
 NCORES=95
 export PYSPARK_SUBMIT_ARGS="--driver-memory 100g pyspark-shell --executor-memory 2g pyspark-shell"
 #NCORES=31
-#export PYSPARK_SUBMIT_ARGS="--driver-memory 50g --executor-memory 2g pyspark-shell"
+#export PYSPARK_SUBMIT_ARGS="--driver-memory 20g --executor-memory 2g pyspark-shell"
 
 # Run the full pipeline (or alternatively, run individual commands from this script)
 dt=`date '+%Y_%m_%d.%H_%M'`
@@ -195,14 +195,14 @@ To run on google dataproc: (last run took XX hrs)
 # Start a dataproc cluster
 # Note that I had this fail multiple times, and had to try adjusting the number
 # of executors, memory, cores, etc. to get it to work. More memory seems to be key.
-# Took ~30 min on last run, n2-highmem-64
+# Took nearly 5 hrs on last run, n2-highmem-64
+# This is probably mainly due to checking for duplicates. Without that would be < 1 hr.
 gcloud beta dataproc clusters create \
     js-coloc-beta-join \
     --image-version=preview \
     --properties=spark:spark.debug.maxToStringFields=100,spark:spark.driver.memory=25g,spark:spark.executor.memory=76g,spark:spark.executor.cores=8,spark:spark.executor.instances=6 \
     --master-machine-type=n2-highmem-64 \
     --master-boot-disk-size=2TB \
-    --num-master-local-ssds=8 \
     --zone=europe-west1-d \
     --initialization-action-timeout=20m \
     --single-node \
