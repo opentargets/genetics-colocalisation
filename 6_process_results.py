@@ -131,11 +131,23 @@ def main():
         print('{} coloc tests removed that were duplicates'.format( int((last_n - df.count())/2) ))
 
     # Add gene_id using phenotype_id
+    # Need to handle both eQTLs, which may have phenotype_id as an array probe
+    # and sQTLs, which have the gene_id within the phenotype_id field
     phenotype_map = load_pheno_to_gene_map(in_phenotype_maps)
     biofeature_mapper = udf(lambda x: phenotype_map.get(x, x))
     df = (
-        df.withColumn('left_gene_id', biofeature_mapper(col('left_phenotype')))
-          .withColumn('right_gene_id', biofeature_mapper(col('right_phenotype')))
+        df.withColumn('left_gene_id',
+                        when(col('left_type') == 'eqtl', biofeature_mapper(col('left_phenotype')))
+                        .otherwise(lit(None)))
+          .withColumn('right_gene_id',
+                        when(col('right_type') == 'eqtl', biofeature_mapper(col('right_phenotype')))
+                        .otherwise(lit(None)))
+          .withColumn('left_gene_id',
+                        when(col('left_type') == 'sqtl', split(col('left_phenotype'), '\^').getItem(4))
+                        .otherwise(col('left_gene_id')))
+          .withColumn('right_gene_id',
+                        when(col('right_type') == 'sqtl', split(col('right_phenotype'), '\^').getItem(4))
+                        .otherwise(col('right_gene_id')))
     )
 
     # Set gene_id to null if it doesn't start with ENSG
@@ -184,6 +196,7 @@ def main():
 
     return 0
 
+
 def drop_duplicates_keep_first(df, subset, order_colname, ascending=True):
     ''' Implements the equivalent pd.drop_duplicates(keep='first')
     Args:
@@ -215,6 +228,7 @@ def drop_duplicates_keep_first(df, subset, order_colname, ascending=True):
     )
     return res
 
+
 def load_pheno_to_gene_map(infs):
     ''' Loads a dictionary, mapping phenotype_ids to ensembl gene IDs.
         Input files should have 2 columns phenotype_id, gene_id
@@ -242,6 +256,7 @@ def load_pheno_to_gene_map(infs):
                     parts[header.index('gene_id')]
     
     return d
+
 
 if __name__ == '__main__':
 

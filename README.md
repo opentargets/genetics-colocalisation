@@ -196,7 +196,7 @@ To run on google dataproc: (last run took XX hrs)
 # Note that I had this fail multiple times, and had to try adjusting the number
 # of executors, memory, cores, etc. to get it to work. More memory seems to be key.
 # Took nearly 5 hrs on last run, n2-highmem-64
-# This is probably mainly due to checking for duplicates. Without that would be < 1 hr.
+# This would probably be dramatically faster on BigQuery.
 gcloud beta dataproc clusters create \
     js-coloc-beta-join \
     --image-version=preview \
